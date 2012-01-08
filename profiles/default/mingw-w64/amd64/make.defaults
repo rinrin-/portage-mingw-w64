@@ -1,0 +1,16 @@
+# Copyright 1999-2009 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+# $Header: /var/cvsroot/gentoo-x86/profiles/prefix/windows/winnt/make.defaults,v 1.2 2009/06/30 16:35:04 darkside Exp $
+
+# System-wide defaults for all Windows profiles
+# This file should rarely need to be changed
+
+# 'Sane' defaults
+ELIBC="mingw-w64"
+KERNEL="mingw-w64"
+
+FEATURES="nostrip"
+
+ARCH="x86_64-w64"
+CHOST="x86_64-w64-mingw32"
+ACCEPT_KEYWORDS="~x86_64-w64"
