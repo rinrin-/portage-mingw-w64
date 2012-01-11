@@ -11,6 +11,6 @@ KERNEL="mingw-w64"
 
 FEATURES="nostrip"
 
-ARCH="x86_64-w64"
+ARCH="amd64"
 CHOST="x86_64-w64-mingw32"
-ACCEPT_KEYWORDS="~x86_64-w64"
+ACCEPT_KEYWORDS="amd64 ~amd64"

@@ -1,0 +1,53 @@
+[mingw domain]
+class=pkgcore.ebuild.domain.domain
+fetcher='fetcher'
+name='mingw domain'
+profile='profile'
+repositories='mingw portage'
+PORTAGE_TMPDIR='/var/tmp'
+ACCEPT_KEYWORDS='~amd64'
+EPREFIX='/mingw64'
+vdb='vdb'
+default=true
+
+[mingw portage]
+class=pkgcore.ebuild.repository.UnconfiguredTree
+cache=cache
+default_mirrors='http://mirrors.163.com/gentoo/distfiles/'
+eclass_cache='eclass'
+location='/usr/local/portage'
+
+[cache]
+class=pkgcore.cache.flat_hash.database
+label='/usr/local/portage'
+location='/var/cache/edb/dep'
+
+[eclass]
+class=pkgcore.ebuild.eclass_cache.cache
+path='/usr/local/portage/eclass'
+portdir='/usr/local/portage'
+
+[profile]
+class=pkgcore.ebuild.profiles.OnDiskProfile
+basepath='/usr/local/portage/profiles'
+profile='default/mingw-w64/amd64'
+
+[fetcher]
+class=pkgcore.fetch.custom.fetcher
+distdir='/usr/local/portage/distfiles'
+command='/usr/bin/wget -t 3 -T 60 --passive-ftp -O "${DISTDIR}/${FILE}" "${URI}"'
+resume_command='/usr/bin/wget -c -t 3 -T 60 --passive-ftp -O "${DISTDIR}/${FILE}" "${URI}"'
+
+[vdb]
+class=pkgcore.vdb.ondisk.tree
+cache_location='/var/cache/edb/dep/var/db/pkg'
+location='/var/db/pkg'
+
+[mingw demo repo]
+class=pkgcore.sync.base.GenericSyncer
+basedir='/usr/local/portage'
+uri='git://github.com/rinrin-/portage-mingw-w64.git'
+
+[world]
+class=pkgcore.pkgsets.filelist.WorldFile
+location='/var/lib/portage/world'

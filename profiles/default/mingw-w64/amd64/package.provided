@@ -1,0 +1,6 @@
+# some apps depend on this, and in mingw-w64 the best we can assume is that
+# we have it
+sys-devel/automake-1.11.2
+sys-devel/libtool-2.4
+sys-devel/autoconf-2.68
+dev-libs/libxml2-2.7.8
