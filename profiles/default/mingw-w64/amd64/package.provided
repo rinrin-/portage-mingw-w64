@@ -3,4 +3,8 @@
 sys-devel/automake-1.11.2
 sys-devel/libtool-2.4
 sys-devel/autoconf-2.68
-dev-libs/libxml2-2.7.8
+#dev-libs/libxml2-2.7.8
+app-shells/bash-4.1.10
+sys-apps/grep-2.6.3
+sys-apps/coreutils-8.14
+sys-apps/findutils-4.5.9
