@@ -196,14 +196,15 @@ subversion_fetch() {
 
 	case "${protocol}" in
 		http|https)
-			if ! built_with_use -o dev-vcs/subversion webdav-neon webdav-serf; then
-				echo
-				eerror "In order to emerge this package, you need to"
-				eerror "reinstall Subversion with support for WebDAV."
-				eerror "Subversion requires either Neon or Serf to support WebDAV."
-				echo
-				die "${ESVN}: reinstall Subversion with support for WebDAV."
-			fi
+			# dirty hack for preinstalled subversion
+			# if ! built_with_use -o dev-vcs/subversion webdav-neon webdav-serf; then
+			# 	echo
+			# 	eerror "In order to emerge this package, you need to"
+			# 	eerror "reinstall Subversion with support for WebDAV."
+			#	eerror "Subversion requires either Neon or Serf to support WebDAV."
+			#	echo
+			#	die "${ESVN}: reinstall Subversion with support for WebDAV."
+			# fi
 			;;
 		svn|svn+ssh)
 			;;
