@@ -30,4 +30,5 @@ src_compile() {
 
 src_install() {
   emake DESTDIR="${D}${EPREFIX}" install
+  rm -f "${D}${EPREFIX}"/usr/lib*/libwinpthread.la
 }
