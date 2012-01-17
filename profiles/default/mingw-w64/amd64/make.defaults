@@ -14,3 +14,7 @@ FEATURES="nostrip"
 ARCH="amd64"
 CHOST="x86_64-w64-mingw32"
 ACCEPT_KEYWORDS="amd64 ~amd64"
+
+CFLAGS="-O2 -mms-bitfields"
+CXXFLAGS="${CFLAGS}"
+LDFLAGS="-Wl,-enable-auto-import"
