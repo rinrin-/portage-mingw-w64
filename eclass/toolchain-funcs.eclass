@@ -671,7 +671,7 @@ gen_usr_ldscript() {
 			ln -snf "../../${libdir}/${tlib}" "${lib}"
 			popd > /dev/null
 			;;
-		*-aix*|*-irix*|*64*-hpux*|*-interix*|*-winnt*)
+		*-aix*|*-irix*|*64*-hpux*|*-interix*|*-winnt*|*-mingw*)
 			if ${auto} ; then
 				mv "${ED}"/usr/${libdir}/${lib}* "${ED}"/${libdir}/ || die
 				# no way to retrieve soname on these platforms (?)
