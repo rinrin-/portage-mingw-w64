@@ -68,7 +68,7 @@ src_compile() {
   append-cppflags -I${EPREFIX}/usr/include
   append-ldflags -L${EPREFIX}/usr/$(get_libdir)
 	econf --with-curses --enable-multibyte || die
-	emake AR=$(tc-getBUILD_AR) || die
+	emake AR=${CHOST}-ar || die
 
   # mingw-w64 unsupported
 	if ! tc-is-cross-compiler && false ; then

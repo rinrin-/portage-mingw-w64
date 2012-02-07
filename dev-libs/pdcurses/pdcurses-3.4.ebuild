@@ -26,10 +26,10 @@ src_configure() {
 
 src_compile() {
   cd win32
-	emake CC=$(tc-getBUILD_CC) STRIP=$(tc-getBUILD_STRIP) \
-	      AR=$(tc-getBUILD_AR) LINK=$(tc-getBUILD_CC) \
+	emake CC=${CHOST}-gcc STRIP=${CHOST}-strip \
+	      AR=${CHOST}-ar LINK=${CHOST}-gcc \
 	      -f gccwin32.mak DLL=Y WIDE=Y || die "emake failed"
-	 cd ../doc && emake CC=$(tc-getBUILD_CC) || die "emake failed"
+	 cd ../doc && emake CC=${CHOST}-gcc || die "emake failed"
 }
 
 src_install() {

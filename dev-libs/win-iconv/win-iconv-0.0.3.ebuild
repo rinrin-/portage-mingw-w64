@@ -26,10 +26,13 @@ src_unpack() {
 }
 
 src_compile() {
-  # no tc-getBUILD equivalent for dlltool and dllwrap
-	emake CC=$(tc-getBUILD_CC) STRIP=$(tc-getBUILD_STRIP) \
-	      AR=$(tc-getBUILD_AR) RANLIB=$(tc-getBUILD_RANLIB) \
+	emake CC=${CHOST}-gcc STRIP=${CHOST}-strip \
+	      AR=${CHOST}-ar RANLIB=${CHOST}-ranlib \
 	      DLLTOOL=${CHOST}-dlltool DLLWRAP=${CHOST}-dllwrap || die "emake failed"
+}
+
+src_test() {
+	emake CC=${CHOST}-gcc test || die "emake test failed"
 }
 
 src_install() {
