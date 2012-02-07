@@ -9,10 +9,11 @@
 ELIBC="mingw-w64"
 KERNEL="mingw-w64"
 
-FEATURES="nostrip"
+FEATURES="nostrip test"
 
 ARCH="amd64"
 CHOST="x86_64-w64-mingw32"
+CBUILD="i686-pc-cygwin"
 ACCEPT_KEYWORDS="amd64 ~amd64"
 
 CFLAGS="-O2 -mms-bitfields"
