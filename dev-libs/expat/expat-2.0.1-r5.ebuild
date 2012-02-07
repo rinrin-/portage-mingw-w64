@@ -58,11 +58,11 @@ src_install() {
 	fi
 
 	cd "${S}"-build
-	emake install DESTDIR="${D}${EPREFIX}"
+	emake install DESTDIR="${D}"
 	cd "${S}"-buildu
-	emake installlib DESTDIR="${D}${EPREFIX}" LIBRARY=libexpatu.la
+	emake installlib DESTDIR="${D}" LIBRARY=libexpatu.la
 	cd "${S}"-buildw
-	emake installlib DESTDIR="${D}${EPREFIX}" LIBRARY=libexpatw.la
+	emake installlib DESTDIR="${D}" LIBRARY=libexpatw.la
 
   elog "${D}${EPREFIX}"/usr/lib*/libexpat{,u,w}.la
 	use static-libs || rm -f "${D}${EPREFIX}"/usr/lib*/libexpat{,u,w}.la
