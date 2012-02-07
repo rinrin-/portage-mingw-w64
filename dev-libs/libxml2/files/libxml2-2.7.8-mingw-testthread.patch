@@ -1,0 +1,11 @@
+--- libxml2-2.7.8/testThreads.c	2010-10-12 14:25:32.000000000 +0800
++++ libxml2-2.7.8-new/testThreads.c	2012-02-06 20:59:51.337811100 +0800
+@@ -107,7 +107,7 @@
+ 
+ 	for (i = 0; i < num_threads; i++) {
+ 	    results[i] = NULL;
+-	    tid[i] = (pthread_t) -1;
++	    tid[i].p = (void *) -1;
+ 	}
+ 
+ 	for (i = 0; i < num_threads; i++) {
