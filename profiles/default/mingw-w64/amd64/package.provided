@@ -10,3 +10,6 @@ sys-apps/coreutils-8.14
 sys-apps/findutils-4.5.9
 dev-vcs/subversion-1.7.2
 net-misc/rsync-3.0.9
+sys-devel/binutils-2.22
+app-arch/xz-utils-5.0.2
+sys-devel/gcc-4.5.3
