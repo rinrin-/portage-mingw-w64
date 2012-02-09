@@ -18,4 +18,4 @@ ACCEPT_KEYWORDS="amd64 ~amd64"
 
 CFLAGS="-O2 -mms-bitfields"
 CXXFLAGS="${CFLAGS}"
-LDFLAGS="-Wl,-enable-auto-import"
+LDFLAGS="-L/mingw64/usr/lib64 -Wl,-enable-auto-import"
