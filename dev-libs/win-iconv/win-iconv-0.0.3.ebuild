@@ -1,8 +1,7 @@
-# Copyright 1999-2011 Gentoo Foundation
-# Distributed under the terms of the GNU General Public License v2
 
 inherit eutils multilib libtool toolchain-funcs
 
+EAPI="3"
 DESCRIPTION="iconv implementation using Win32 API to convert."
 HOMEPAGE="http://code.google.com/p/win-iconv/"
 SRC_URI="http://win-iconv.googlecode.com/files/${P}.tar.bz2"
@@ -19,16 +18,13 @@ RDEPEND="${DEPEND}"
 src_unpack() {
 	unpack ${A}
 	cd "${S}"
-
-	# Make sure that libtool support is updated to link "the linux way" on
-	# FreeBSD.
-	elibtoolize
 }
 
 src_compile() {
 	emake CC=${CHOST}-gcc STRIP=${CHOST}-strip \
 	      AR=${CHOST}-ar RANLIB=${CHOST}-ranlib \
-	      DLLTOOL=${CHOST}-dlltool DLLWRAP=${CHOST}-dllwrap || die "emake failed"
+	      DLLTOOL=${CHOST}-dlltool DLLWRAP=${CHOST}-dllwrap \
+	      SPECS_FLAGS="--implib libiconv.dll.a" || die "emake failed"
 }
 
 src_test() {
@@ -37,7 +33,8 @@ src_test() {
 
 src_install() {
   insinto "${EPREFIX}/usr/include" && doins "${WORKDIR}/${P}/iconv.h"
-  insinto "${EPREFIX}/usr/bin" && doins "${WORKDIR}/${P}/iconv.dll"
+  insopts -m0755 && insinto "${EPREFIX}/usr/bin" && doins "${WORKDIR}/${P}/iconv.dll"
   insopts -m0755 && insinto "${EPREFIX}/usr/bin" && doins "${WORKDIR}/${P}/win_iconv.exe"
   insinto "${EPREFIX}/usr/lib64" && doins "${WORKDIR}/${P}/libiconv.a"
+  insinto "${EPREFIX}/usr/lib64" && doins "${WORKDIR}/${P}/libiconv.dll.a"
 }
