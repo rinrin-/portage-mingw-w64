@@ -89,7 +89,9 @@ src_prepare() {
 	
 	epatch "${FILESDIR}/${P}-mingw-snprintf.patch"
 	epatch "${FILESDIR}/${P}-mingw-wsockcompat.patch"
-	epatch "${FILESDIR}/${P}-mingw-testthread.patch"
+	
+	# win-iconv does not support ebcdic conversion
+	rm -f test/ebcdic_566012.xml
 
 	# Please do not remove, as else we get references to PORTAGE_TMPDIR
 	# in /usr/lib/python?.?/site-packages/libxml2mod.la among things.
