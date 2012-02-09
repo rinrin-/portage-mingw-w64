@@ -35,7 +35,7 @@ src_compile() {
 src_install() {
   insinto "${EPREFIX}/usr/include"
   doins "${WORKDIR}/${P}/curses.h" && doins "${WORKDIR}/${P}/panel.h"
-  insinto "${EPREFIX}/usr/bin" && doins "${WORKDIR}/${P}/win32/pdcurses.dll"
-  insinto "${EPREFIX}/usr/lib64" && doins "${WORKDIR}/${P}/win32/libcurses.a"
+  insopts -m0755 && insinto "${EPREFIX}/usr/bin" && doins "${WORKDIR}/${P}/win32/pdcurses.dll"
+  insinto "${EPREFIX}/usr/lib64" && doins "${WORKDIR}/${P}/win32/libcurses.dll.a"
   dodoc doc/PDCurses.txt
 }

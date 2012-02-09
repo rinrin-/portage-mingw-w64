@@ -29,7 +29,7 @@
 -	LIBEXE = gcc $(DEFFILE)
 -	LIBFLAGS = -Wl,--out-implib,pdcurses.a -shared -o
 +	LIBEXE = $(CC) $(DEFFILE)
-+	LIBFLAGS = -Wl,--out-implib,libcurses.a -shared -o
++	LIBFLAGS = -Wl,--out-implib,libcurses.dll.a -shared -o
  	LIBCURSES = pdcurses.dll
  	LIBDEPS = $(LIBOBJS) $(PDCOBJS) $(DEFFILE)
  	CLEAN = $(LIBCURSES) *.a $(DEFFILE)
