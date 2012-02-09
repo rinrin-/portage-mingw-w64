@@ -1,0 +1,11 @@
+--- win-iconv-0.0.3/Makefile	2011-05-15 21:53:52.000000000 +0800
++++ win-iconv-0.0.3-new/Makefile	2012-02-07 15:49:10.462964000 +0800
+@@ -18,7 +18,7 @@
+ 
+ iconv.dll: win_iconv.c
+ 	$(CC) $(CFLAGS) -c win_iconv.c -DMAKE_DLL
+-	$(DLLWRAP) --dllname iconv.dll --def iconv.def win_iconv.o $(SPECS_FLAGS)
++	$(DLLWRAP) --dllname iconv.dll --def iconv.def --implib iconv.dll.a win_iconv.o $(SPECS_FLAGS)
+ 	$(STRIP) iconv.dll
+ 
+ libiconv.a: win_iconv.c
