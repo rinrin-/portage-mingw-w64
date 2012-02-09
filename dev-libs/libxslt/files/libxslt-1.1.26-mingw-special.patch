@@ -1,0 +1,24 @@
+--- libxslt-1.1.26/configure.in	2009-09-24 22:27:30.000000000 +0800
++++ libxslt-1.1.26-new/configure.in	2012-02-07 20:56:43.200666600 +0800
+@@ -632,6 +632,8 @@
+  AC_DEFINE([_WINSOCKAPI_],1,[Using the Win32 Socket implementation])
+  AC_DEFINE([snprintf],[_snprintf],[Win32 Std C name mangling work-around])
+  AC_DEFINE([vsnprintf],[_vsnprintf],[Win32 Std C name mangling work-around])
++ WITH_TRIO=0
++ AC_SUBST(WITH_TRIO)
+  ;;
+ esac
+ AC_SUBST(WIN32_EXTRA_LIBADD)
+
+--- libxslt-1.1.26/libxslt/security.c	2009-08-13 21:04:24.000000000 +0800
++++ libxslt-1.1.26-new/libxslt/security.c	2012-02-07 20:26:10.940675300 +0800
+@@ -39,6 +39,9 @@
+ #ifndef INVALID_FILE_ATTRIBUTES
+ #define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
+ #endif
++#if defined(__MINGW32__)
++#define mkdir(p,m) _mkdir(p)
++#endif
+ #endif
+ 
+ #ifndef HAVE_STAT
