@@ -1,0 +1,11 @@
+--- gmp-5.0.3/tests/cxx/clocale.c	2012-01-27 16:59:30.000000000 +0800
++++ gmp-5.0.3-new/tests/cxx/clocale.c	2012-02-08 12:58:00.857206900 +0800
+@@ -41,7 +41,7 @@
+ 
+ extern char point_string[];
+ 
+-#if HAVE_LOCALECONV
++#if HAVE_LOCALECONV && !defined (__MINGW32__)
+ struct lconv *
+ localeconv (void)
+ {
