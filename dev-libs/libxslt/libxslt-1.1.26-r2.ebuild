@@ -41,6 +41,7 @@ src_prepare() {
 	epatch "${FILESDIR}/${P}-id-generation.patch"
 	
 	epatch "${FILESDIR}/${P}-mingw-special.patch"
+	epatch "${FILESDIR}/${P}-mingw-testthread.patch"
 
 	eautoreconf
 	epunt_cxx

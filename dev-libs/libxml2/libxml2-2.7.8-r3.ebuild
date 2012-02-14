@@ -89,6 +89,7 @@ src_prepare() {
 	
 	epatch "${FILESDIR}/${P}-mingw-snprintf.patch"
 	epatch "${FILESDIR}/${P}-mingw-wsockcompat.patch"
+	epatch "${FILESDIR}/${P}-mingw-testthread.patch"
 	
 	# win-iconv does not support ebcdic conversion
 	rm -f test/ebcdic_566012.xml
