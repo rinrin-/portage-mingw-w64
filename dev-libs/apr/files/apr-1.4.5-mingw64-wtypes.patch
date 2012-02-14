@@ -1,0 +1,30 @@
+--- apr-1.4.5.old/file_io/win32/filestat.c	2011-03-22 01:04:17.000000000 +0800
++++ apr-1.4.5/file_io/win32/filestat.c	2012-02-12 19:01:22.035555100 +0800
+@@ -15,7 +15,6 @@
+  */
+ 
+ #include "apr.h"
+-#include <aclapi.h>
+ #include "apr_private.h"
+ #include "apr_arch_file_io.h"
+ #include "apr_file_io.h"
+--- apr-1.4.5.old/include/arch/win32/apr_private.h	2007-06-01 07:55:21.000000000 +0800
++++ apr-1.4.5/include/arch/win32/apr_private.h	2012-02-12 19:00:12.649582700 +0800
+@@ -45,12 +45,14 @@
+  */
+ #ifndef _WIN32_WCE
+ #define HAVE_ACLAPI 1
+-#ifdef __wtypes_h__
++#ifdef __WIDL_WTYPES_H
+ #include <accctrl.h>
+ #else
+-#define __wtypes_h__
++#define __WIDL_WTYPES_H
++#define COM_NO_WINDOWS_H
+ #include <accctrl.h>
+-#undef __wtypes_h__
++#undef __WIDL_WTYPES_H
++#undef COM_NO_WINDOWS_H
+ #endif
+ #else
+ #define HAVE_ACLAPI 0

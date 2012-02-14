@@ -1,0 +1,19 @@
+--- apr-1.4.5.old/configure.in	2011-04-12 03:58:38.000000000 +0800
++++ apr-1.4.5/configure.in	2012-02-11 14:04:24.989083000 +0800
+@@ -1734,6 +1734,16 @@
+         int64_t_fmt='#define APR_INT64_T_FMT "I64d"'
+         uint64_t_fmt='#define APR_UINT64_T_FMT "I64u"'
+         uint64_t_hex_fmt='#define APR_UINT64_T_HEX_FMT "I64x"'
++         case $target_cpu in
++          x86_64)
++            ssize_t_fmt="I64d"
++            size_t_fmt="I64d"
++            ;;
++          *)
++            ssize_t_fmt="ld"
++            size_t_fmt="ld"
++            ;;
++         esac
+         int64_value="__int64"
+         long_value="__int64"
+         int64_strfn="_strtoi64"

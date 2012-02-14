@@ -1,0 +1,16 @@
+--- apr-1.4.5.old/include/arch/win32/apr_private.h	2012-02-12 19:33:34.779627200 +0800
++++ apr-1.4.5/include/arch/win32/apr_private.h	2012-02-12 19:37:58.774165300 +0800
+@@ -159,9 +159,13 @@
+ #if defined(_WIN32_WCE)
+ #define APR_OFF_T_STRFN         strtol
+ #else
++#if defined(__MINGW64__)
++#define APR_OFF_T_STRFN         _strtoi64
++#else
+ #define APR_OFF_T_STRFN         strtoi
+ #endif
+ #endif
++#endif
+ 
+ /* used to check for DWORD overflow in 64bit compiles */
+ #define APR_DWORD_MAX 0xFFFFFFFFUL

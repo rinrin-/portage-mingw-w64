@@ -1,3 +1,4 @@
 dev-libs/libxml2	readline history
 dev-libs/libxslt	static-libs
 dev-libs/gmp		doc cxx
+dev-libs/apr		static-libs

@@ -1,0 +1,22 @@
+--- apr-1.4.5.old/Makefile.in	2011-05-10 11:45:42.000000000 +0800
++++ apr-1.4.5/Makefile.in	2012-02-12 21:43:11.478971400 +0800
+@@ -38,7 +38,7 @@
+ #
+ TARGETS = $(TARGET_LIB) apr.exp apr-config.out build/apr_rules.out
+ 
+-LT_VERSION = @LT_VERSION@
++LT_VERSION = -no-undefined @LT_VERSION@
+ 
+ # bring in rules.mk for standard functionality
+ @INCLUDE_RULES@
+--- apr-1.4.5.old/test/Makefile.in	2008-05-21 19:34:33.000000000 +0800
++++ apr-1.4.5/test/Makefile.in	2012-02-12 22:30:23.685623700 +0800
+@@ -121,7 +121,7 @@
+ OBJECTS_mod_test = mod_test.lo
+ mod_test.la: $(OBJECTS_mod_test)
+ 	$(LIBTOOL) $(LTFLAGS) --mode=link $(COMPILE) -rpath `pwd` -module \
+-	  -avoid-version $(LT_LDFLAGS) $(ALL_LDFLAGS) -o $@ \
++	  -no-undefined -avoid-version $(LT_LDFLAGS) $(ALL_LDFLAGS) -o $@ \
+ 	  $(OBJECTS_mod_test)
+ 
+ OBJECTS_libmod_test = mod_test.lo $(LOCAL_LIBS)
