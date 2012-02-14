@@ -1,0 +1,44 @@
+--- mpc-0.9.old/src/mpc.h	(revision 990)
++++ mpc-0.9/src/mpc.h	(working copy)
+@@ -120,7 +120,7 @@
+ /* Support for WINDOWS Dll:
+    Check if we are inside a MPC build, and if so export the functions.
+    Otherwise does the same thing as GMP */
+-#if defined(__MPC_WITHIN_MPC) && __GMP_LIBGMP_DLL
++#if defined (__GMP_LIBGMP_DLL)
+ # define __MPC_DECLSPEC __GMP_DECLSPEC_EXPORT
+ #else
+ # define __MPC_DECLSPEC __GMP_DECLSPEC
+--- mpc-0.9.old/configure.ac	2011-02-21 18:10:12.000000000 +0800
++++ mpc-0.9/configure.ac	2012-02-10 17:00:07.490422600 +0800
+@@ -112,6 +112,8 @@
+ 
+ 
+ dnl Configs for Windows DLLs
++AC_SUBST(MPC_LDFLAGS)
++AC_LIBTOOL_WIN32_DLL
+ case $host in
+   *-*-cygwin* | *-*-mingw* | *-*-pw32* | *-*-os2*)
+      MPC_WINDOWS
+--- mpc-0.9.old/m4/mpc.m4	2011-02-04 02:42:36.000000000 +0800
++++ mpc-0.9/m4/mpc.m4	2012-02-10 17:01:19.727271100 +0800
+@@ -132,7 +132,7 @@
+ AC_DEFUN([MPC_WINDOWS], [
+    AC_MSG_CHECKING(for DLL/static GMP)
+    if test "$enable_shared" = yes; then
+-     LDFLAGS="$LDFLAGS -no-undefined"
++     MPC_LDFLAGS="$MPC_LDFLAGS -no-undefined"
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+ #include "gmp.h"
+ #if !__GMP_LIBGMP_DLL
+--- mpc-0.9.old/src/Makefile.am	2011-01-18 20:59:16.000000000 +0800
++++ mpc-0.9/src/Makefile.am	2012-02-10 17:02:00.215028100 +0800
+@@ -2,7 +2,7 @@
+ AM_CFLAGS=@WARNINGCFLAGS@
+ 
+ lib_LTLIBRARIES = libmpc.la
+-libmpc_la_LDFLAGS = -version-info 2:0:0
++libmpc_la_LDFLAGS = $(MPC_LDFLAGS) -version-info 2:0:0
+ libmpc_la_SOURCES = mpc-impl.h abs.c acos.c acosh.c add.c add_fr.c         \
+   add_si.c add_ui.c arg.c asin.c asinh.c atan.c atanh.c clear.c cmp.c cmp_si_si.c   \
+   conj.c cosh.c div_2exp.c div.c div_fr.c div_ui.c exp.c fma.c fr_div.c    \
