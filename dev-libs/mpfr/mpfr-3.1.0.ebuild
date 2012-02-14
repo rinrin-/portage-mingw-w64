@@ -46,7 +46,6 @@ src_prepare() {
 
 src_configure() {
     #avoid test failure for mingw64
-    pushd ${CBUILD} >/dev/null
     case ${CHOST} in
         *64*mingw* )
             CBUILD=${CHOST}
@@ -59,12 +58,11 @@ src_configure() {
 		$(use_enable static-libs static) \
 		$(use_enable !static-libs shared) \
 		|| die
-	popd >/dev/null
 }
 
 src_install() {
 	emake install DESTDIR="${D}" || die
-	use static-libs || rm -f "${D}"/usr/$(get_libdir)/libmpfr.la
+	use static-libs || rm -f "${D}${EPREFIX}"/usr/$(get_libdir)/libmpfr.la
 
 	# clean up html/license install
 	pushd "${D}${EPREFIX}"/usr/share/doc/${PF} >/dev/null
