@@ -1,10 +1,10 @@
 --- libxml2-2.7.8/include/wsockcompat.h	2010-10-12 14:25:32.000000000 +0800
 +++ libxml2-2.7.8-new/include/wsockcompat.h	2012-02-06 20:44:42.389352200 +0800
-@@ -39,40 +39,7 @@
+@@ -39,40 +39,9 @@
  #endif
  
  #define EWOULDBLOCK             WSAEWOULDBLOCK
--#define EINPROGRESS             WSAEINPROGRESS
+ #define EINPROGRESS             WSAEINPROGRESS
 -#define EALREADY                WSAEALREADY
 -#define ENOTSOCK                WSAENOTSOCK
 -#define EDESTADDRREQ            WSAEDESTADDRREQ
@@ -22,7 +22,7 @@
 -#define ENETUNREACH             WSAENETUNREACH
 -#define ENETRESET               WSAENETRESET
 -#define ECONNABORTED            WSAECONNABORTED
--#define ECONNRESET              WSAECONNRESET
+ #define ECONNRESET              WSAECONNRESET
 -#define ENOBUFS                 WSAENOBUFS
 -#define EISCONN                 WSAEISCONN
 -#define ENOTCONN                WSAENOTCONN
