@@ -1,0 +1,96 @@
+--- jbigkit.old/pbmtools/jbgtopbm.c	2008-08-28 05:37:45.000000000 +0800
++++ jbigkit/pbmtools/jbgtopbm.c	2012-02-16 14:42:05.997563000 +0800
+@@ -10,6 +10,9 @@
+ #include <stdlib.h>
+ #include <ctype.h>
+ #include <limits.h>
++#if _WIN32
++  #include <fcntl.h>
++#endif
+ #include "jbig.h"
+ 
+ char *progname;                  /* global pointer to argv[0] */
+@@ -295,6 +298,11 @@
+     exit(1);
+   }
+ 
++#if _WIN32
++  _setmode(_fileno(stdin), _O_BINARY);
++  _setmode(_fileno(stdout), _O_BINARY);
++#endif
++
+   /* parse command line arguments */
+   progname = argv[0];
+   for (i = 1; i < argc; i++) {
+--- jbigkit.old/pbmtools/jbgtopbm85.c	2008-08-27 16:50:41.000000000 +0800
++++ jbigkit/pbmtools/jbgtopbm85.c	2012-02-16 14:42:42.180025800 +0800
+@@ -10,6 +10,9 @@
+ #include <stdlib.h>
+ #include <ctype.h>
+ #include <limits.h>
++#if _WIN32
++  #include <fcntl.h>
++#endif
+ #include "jbig85.h"
+ 
+ char *progname;                  /* global pointer to argv[0] */
+@@ -67,6 +70,11 @@
+   unsigned long xmax = 8192;
+   size_t bytes_read = 0;
+ 
++#if _WIN32
++  _setmode(_fileno(stdin), _O_BINARY);
++  _setmode(_fileno(stdout), _O_BINARY);
++#endif
++
+   /* parse command line arguments */
+   progname = argv[0];
+   for (i = 1; i < argc; i++) {
+--- jbigkit.old/pbmtools/pbmtojbg.c	2008-07-17 04:59:41.000000000 +0800
++++ jbigkit/pbmtools/pbmtojbg.c	2012-02-16 14:43:14.656482800 +0800
+@@ -10,6 +10,9 @@
+ #include <stdlib.h>
+ #include <ctype.h>
+ #include <string.h>
++#if _WIN32
++  #include <fcntl.h>
++#endif
+ #include "jbig.h"
+ 
+ 
+@@ -129,6 +132,11 @@
+   int options = JBG_TPDON | JBG_TPBON | JBG_DPON;
+   int order = JBG_ILEAVE | JBG_SMID;
+ 
++#if _WIN32
++  _setmode(_fileno(stdin), _O_BINARY);
++  _setmode(_fileno(stdout), _O_BINARY);
++#endif
++
+   /* parse command line arguments */
+   progname = argv[0];
+   for (i = 1; i < argc; i++) {
+--- jbigkit.old/pbmtools/pbmtojbg85.c	2008-08-26 06:26:39.000000000 +0800
++++ jbigkit/pbmtools/pbmtojbg85.c	2012-02-16 14:43:44.527734700 +0800
+@@ -10,6 +10,9 @@
+ #include <stdlib.h>
+ #include <ctype.h>
+ #include <string.h>
++#if _WIN32
++  #include <fcntl.h>
++#endif
+ #include "jbig85.h"
+ 
+ 
+@@ -108,6 +111,11 @@
+   char *comment = NULL;
+   int options = JBG_TPBON;
+ 
++#if _WIN32
++  _setmode(_fileno(stdin), _O_BINARY);
++  _setmode(_fileno(stdout), _O_BINARY);
++#endif
++
+   /* parse command line arguments */
+   progname = argv[0];
+   for (i = 1; i < argc; i++) {
