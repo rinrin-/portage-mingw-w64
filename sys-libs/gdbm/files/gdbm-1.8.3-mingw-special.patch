@@ -1,0 +1,315 @@
+diff -BurN gdbm-1.8.3/Makefile.in gdbm-1.8.3-new/Makefile.in
+--- gdbm-1.8.3/Makefile.in	2010-03-07 21:09:07 +0800
++++ gdbm-1.8.3-new/Makefile.in	2010-03-07 21:08:22 +0800
+@@ -73,7 +73,7 @@
+ GDBM_CF = gdbmopen.c gdbmdelete.c gdbmfetch.c  gdbmstore.c gdbmclose.c \
+ 	gdbmreorg.c gdbmseq.c gdbmsync.c gdbmerrno.c gdbmexists.c gdbmfdesc.c \
+ 	gdbmsetopt.c bucket.c falloc.c findkey.c global.c hash.c update.c \
+-	version.c
++	version.c do_flock.c do_link.c
+ 
+ TEST_CF = testdbm.c testndbm.c testgdbm.c
+ EXTRA_CF = dumpgdbm.c loadgdbm.c
+@@ -86,7 +86,7 @@
+ GDBM_OF = gdbmopen.o gdbmdelete.o gdbmfetch.o  gdbmstore.o gdbmclose.o \
+ 	gdbmreorg.o gdbmseq.o gdbmsync.o gdbmerrno.o gdbmexists.o gdbmfdesc.o \
+ 	gdbmsetopt.o bucket.o falloc.o findkey.o global.o hash.o update.o \
+-	version.o
++	version.o do_flock.o do_link.o
+ 
+ DBM_LOF = dbminit.lo delete.lo fetch.lo store.lo seq.lo close.lo
+ 
+@@ -96,7 +96,7 @@
+ GDBM_LOF = gdbmopen.lo gdbmdelete.lo gdbmfetch.lo  gdbmstore.lo gdbmclose.lo \
+ 	gdbmreorg.lo gdbmseq.lo gdbmsync.lo gdbmerrno.lo gdbmexists.lo \
+ 	gdbmfdesc.lo gdbmsetopt.lo bucket.lo falloc.lo findkey.lo global.lo \
+-	hash.lo update.lo version.lo
++	hash.lo update.lo version.lo do_flock.lo do_link.lo
+ 
+ TEX_F = gdbm.aux gdbm.cp gdbm.dvi gdbm.fn gdbm.ky gdbm.log gdbm.pg \
+ 	gdbm.toc gdbm.tp gdbm.vr
+@@ -322,6 +322,8 @@
+ hash.o:		autoconf.h gdbmdefs.h
+ update.o:	autoconf.h gdbmdefs.h
+ version.o:
++do_flock.o:
++do_link.o:
+ extern.h:
+ gdbmdefs.h:	gdbmconst.h systems.h
+ 	touch $(top_srcdir)/gdbmdefs.h
+diff -BurN gdbm-1.8.3/do_flock.c gdbm-1.8.3-new/do_flock.c
+--- gdbm-1.8.3/do_flock.c	1970-01-01 08:00:00 +0800
++++ gdbm-1.8.3-new/do_flock.c	2010-03-07 21:01:43 +0800
+@@ -0,0 +1,172 @@
++/* Emulate flock on platforms that lack it, primarily Windows and MinGW.
++
++   This is derived from sqlite3 sources.
++   http://www.sqlite.org/cvstrac/rlog?f=sqlite/src/os_win.c
++   http://www.sqlite.org/copyright.html
++
++   Written by Richard W.M. Jones <rjones.at.redhat.com>
++
++   Copyright (C) 2008-2010 Free Software Foundation, Inc.
++
++   This library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   This library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
++
++#include <sys/file.h>
++
++/* _get_osfhandle */
++#include <io.h>
++
++/* LockFileEx */
++#define WIN32_LEAN_AND_MEAN
++#include <windows.h>
++#include <errno.h>
++
++#ifndef LOCK_SH
++#define LOCK_SH 1
++#endif
++
++#ifndef LOCK_EX
++#define LOCK_EX 2
++#endif
++
++#ifndef LOCK_NB
++#define LOCK_NB 4
++#endif
++
++#ifndef LOCK_UN
++#define LOCK_UN 8
++#endif
++
++/* Determine the current size of a file.  Because the other braindead
++ * APIs we'll call need lower/upper 32 bit pairs, keep the file size
++ * like that too.
++ */
++static BOOL
++file_size (HANDLE h, DWORD * lower, DWORD * upper)
++{
++  *lower = GetFileSize (h, upper);
++  return 1;
++}
++
++/* LOCKFILE_FAIL_IMMEDIATELY is undefined on some Windows systems. */
++#ifndef LOCKFILE_FAIL_IMMEDIATELY
++# define LOCKFILE_FAIL_IMMEDIATELY 1
++#endif
++
++/* Acquire a lock. */
++static BOOL
++do_lock (HANDLE h, int non_blocking, int exclusive)
++{
++  BOOL res;
++  DWORD size_lower, size_upper;
++  OVERLAPPED ovlp;
++  int flags = 0;
++
++  /* We're going to lock the whole file, so get the file size. */
++  res = file_size (h, &size_lower, &size_upper);
++  if (!res)
++    return 0;
++
++  /* Start offset is 0, and also zero the remaining members of this struct. */
++  memset (&ovlp, 0, sizeof ovlp);
++
++  if (non_blocking)
++    flags |= LOCKFILE_FAIL_IMMEDIATELY;
++  if (exclusive)
++    flags |= LOCKFILE_EXCLUSIVE_LOCK;
++
++  return LockFileEx (h, flags, 0, size_lower, size_upper, &ovlp);
++}
++
++/* Unlock reader or exclusive lock. */
++static BOOL
++do_unlock (HANDLE h)
++{
++  int res;
++  DWORD size_lower, size_upper;
++
++  res = file_size (h, &size_lower, &size_upper);
++  if (!res)
++    return 0;
++
++  return UnlockFile (h, 0, 0, size_lower, size_upper);
++}
++
++/* Now our BSD-like flock operation. */
++int
++do_flock (int fd, int operation)
++{
++  HANDLE h = (HANDLE) _get_osfhandle (fd);
++  DWORD res;
++  int non_blocking;
++
++  if (h == INVALID_HANDLE_VALUE)
++    {
++      errno = EBADF;
++      return -1;
++    }
++
++  non_blocking = operation & LOCK_NB;
++  operation &= ~LOCK_NB;
++
++  switch (operation)
++    {
++    case LOCK_SH:
++      res = do_lock (h, non_blocking, 0);
++      break;
++    case LOCK_EX:
++      res = do_lock (h, non_blocking, 1);
++      break;
++    case LOCK_UN:
++      res = do_unlock (h);
++      break;
++    default:
++      errno = EINVAL;
++      return -1;
++    }
++
++  /* Map Windows errors into Unix errnos.  As usual MSDN fails to
++   * document the permissible error codes.
++   */
++  if (!res)
++    {
++      DWORD err = GetLastError ();
++      switch (err)
++        {
++          /* This means someone else is holding a lock. */
++        case ERROR_LOCK_VIOLATION:
++          errno = EAGAIN;
++          break;
++
++          /* Out of memory. */
++        case ERROR_NOT_ENOUGH_MEMORY:
++          errno = ENOMEM;
++          break;
++
++        case ERROR_BAD_COMMAND:
++          errno = EINVAL;
++          break;
++
++          /* Unlikely to be other errors, but at least don't lose the
++           * error code.
++           */
++        default:
++          errno = err;
++        }
++
++      return -1;
++    }
++
++  return 0;
++}
++
+diff -BurN gdbm-1.8.3/do_link.c gdbm-1.8.3-new/do_link.c
+--- gdbm-1.8.3/do_link.c	1970-01-01 08:00:00 +0800
++++ gdbm-1.8.3-new/do_link.c	2010-03-07 21:01:43 +0800
+@@ -0,0 +1,30 @@
++#define WIN32_LEAN_AND_MEAN
++#define _WIN32_WINNT 0x0501
++#include <windows.h>
++#include <errno.h>
++
++int do_link (const char *from,const char *to)
++{
++  if (from == NULL || to == NULL)
++  {
++      errno = ENOENT;
++      return -1;
++  }
++  if (!CreateHardLinkA(to, from, NULL))
++  {
++	/* Will try CopyFile */
++	if (!CopyFileA (from, to, TRUE))
++        {
++		errno = EACCES;
++		return -1;
++	}
++	else
++	{
++		return 0;
++	}
++  }
++  else
++  {
++     return 0;
++  }
++}
+diff -BurN gdbm-1.8.3/systems.h gdbm-1.8.3-new/systems.h
+--- gdbm-1.8.3/systems.h	2010-03-07 21:09:08 +0800
++++ gdbm-1.8.3-new/systems.h	2010-03-07 21:01:43 +0800
+@@ -63,6 +63,10 @@
+ #define L_SET SEEK_SET
+ #endif
+ 
++#if (defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__
++#define link(from_path,to_path) do_link(from_path, to_path)
++#endif
++
+ /* Do we have flock?  (BSD...) */
+ 
+ #if HAVE_FLOCK
+@@ -89,6 +93,29 @@
+ 
+ #else
+ 
++#if (defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__
++/* Enable flock emulation by LockFile & UnlockFile under MinGW */
++#ifndef LOCK_SH
++#define LOCK_SH 1
++#endif
++
++#ifndef LOCK_EX
++#define LOCK_EX 2
++#endif
++
++#ifndef LOCK_NB
++#define LOCK_NB 4
++#endif
++
++#ifndef LOCK_UN
++#define LOCK_UN 8
++#endif
++
++#define UNLOCK_FILE(dbf) do_flock (dbf->desc, LOCK_UN)
++#define READLOCK_FILE(dbf) lock_val = do_flock (dbf->desc, LOCK_SH + LOCK_NB)
++#define WRITELOCK_FILE(dbf) lock_val = do_flock (dbf->desc, LOCK_EX + LOCK_NB)
++
++#else
+ /* Assume it is done like System V. */
+ 
+ #define UNLOCK_FILE(dbf) \
+@@ -117,6 +144,8 @@
+ 	}
+ #endif
+ 
++#endif
++
+ /* Do we have bcopy?  */
+ #if !HAVE_BCOPY
+ #if HAVE_MEMORY_H
+@@ -128,8 +157,12 @@
+ 
+ /* Do we have fsync? */
+ #if !HAVE_FSYNC
++#if (defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__
++#define fsync(f) _commit(f)
++#else
+ #define fsync(f) {sync(); sync();}
+ #endif
++#endif
+ 
+ /* Default block size.  Some systems do not have blocksize in their
+    stat record. This code uses the BSD blocksize from stat. */
