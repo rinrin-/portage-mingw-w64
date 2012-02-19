@@ -6,3 +6,4 @@ media-libs/giflib	static-libs
 media-libs/jpeg		static-libs
 media-libs/libpng	static-libs
 media-libs/jbig2dec	static-libs png
+media-libs/freeglut	static-libs
