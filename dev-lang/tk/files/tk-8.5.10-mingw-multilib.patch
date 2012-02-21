@@ -1,0 +1,11 @@
+--- tk8.5.10.old/win/Makefile.in	2011-06-24 02:37:39.000000000 +0800
++++ tk8.5.10/win/Makefile.in	2012-02-21 17:12:00.622315100 +0800
+@@ -39,7 +39,7 @@
+ # Directory from which applications will reference the library of Tk
+ # scripts (note: you can set the TK_LIBRARY environment variable at
+ # run-time to override this value):
+-TK_LIBRARY		= $(prefix)/lib/tk$(VERSION)
++TK_LIBRARY		= $(libdir)/tk$(VERSION)
+ 
+ # Path to use at runtime to refer to LIB_INSTALL_DIR:
+ LIB_RUNTIME_DIR		= $(libdir)

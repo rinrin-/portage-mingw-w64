@@ -1,0 +1,11 @@
+--- tk8.5.10.old/win/Makefile.in	2011-06-24 02:37:39.000000000 +0800
++++ tk8.5.10/win/Makefile.in	2012-02-21 14:58:57.518935900 +0800
+@@ -395,7 +395,7 @@
+ DEMOPROGS = browse hello ixset rmt rolodex square tcolor timer widget
+ 
+ SHELL_ENV = \
+-	@TCL_LIBRARY="$(TCL_SRC_DIR_NATIVE)/library"; export TCL_LIBRARY; \
++	@TCL_LIBRARY=`dirname $(TCL_SRC_DIR_NATIVE)`; export TCL_LIBRARY; \
+ 	TK_LIBRARY="$(ROOT_DIR_NATIVE)/library"; export TK_LIBRARY; \
+ 	PATH="$(TCL_BIN_DIR):$(PATH)"; export PATH;
+ 
