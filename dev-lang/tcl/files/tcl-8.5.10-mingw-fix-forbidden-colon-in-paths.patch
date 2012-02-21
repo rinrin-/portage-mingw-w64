@@ -1,0 +1,11 @@
+--- tcl8.5.10.old/unix/installManPage	2011-06-23 21:18:36.000000000 +0800
++++ tcl8.5.10/unix/installManPage	2012-02-19 19:33:29.306541800 +0800
+@@ -102,7 +102,7 @@
+     Target=$Target.$Section$Suffix
+     rm -f $Dir/$Target $Dir/$Target.*
+     if test -z "$First" ; then
+-	First=$Target
++	First=$(echo $Target | sed -e 's/:/-/g')
+ 	sed -e "/man\.macros/r $SrcDir/man.macros" -e "/man\.macros/d" \
+ 	    $ManPage > $Dir/$First
+ 	chmod 444 $Dir/$First

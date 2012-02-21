@@ -1,0 +1,12 @@
+diff -Nur tcl8.5.10.old/win/Makefile.in tcl8.5.10/win/Makefile.in
+--- tcl8.5.10.old/win/Makefile.in	2011-06-23 21:18:37.000000000 +0800
++++ tcl8.5.10/win/Makefile.in	2012-02-19 20:54:23.831023100 +0800
+@@ -33,7 +33,7 @@
+ # Directory from which applications will reference the library of Tcl scripts
+ # (note: you can set the TCL_LIBRARY environment variable at run-time to
+ # override this value):
+-TCL_LIBRARY	= $(prefix)/lib/tcl$(VERSION)
++TCL_LIBRARY	= $(libdir)/tcl$(VERSION)
+ 
+ # Path to use at runtime to refer to LIB_INSTALL_DIR:
+ LIB_RUNTIME_DIR		= $(libdir)
