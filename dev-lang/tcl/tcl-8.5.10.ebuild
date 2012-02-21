@@ -132,6 +132,7 @@ src_install() {
 	if [[ ${CHOST} == *-mingw* ]]; then
 		insinto ${EPREFIX}/usr/${mylibdir}/tcl${v1}/include/win
 	    doins "${S}"/win/*.h || die
+	    doins "${S}"/win/cat.c || die
 	else
 	    insinto ${EPREFIX}/usr/${mylibdir}/tcl${v1}/include/unix
 	    doins "${S}"/unix/*.h || die
@@ -163,5 +164,5 @@ pkg_postinst() {
 	ewarn "upgrade them before this recompilation, too,"
 	ewarn
 	ewarn "After installation on win32 platform, please add TCL_LIBRARY environment variable"
-	ewarn "TCL_LIBRARY=${EPREFIX}/usr/$(get_libdir)"
+	ewarn "TCL_LIBRARY=${EPREFIX}/usr/$(get_libdir)/tcl${PV%.*}"
 }
