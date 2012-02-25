@@ -1,0 +1,42 @@
+#pthread-win32 incompatibility
+--- db-4.8.30.old/dbinc/db.in	2010-04-13 04:25:22.000000000 +0800
++++ db-4.8.30/dbinc/db.in	2012-02-22 13:06:54.962879800 +0800
+@@ -110,7 +110,7 @@
+ @db_seq_decl@
+ 
+ /* Thread and process identification. */
+-@db_threadid_t_decl@
++typedef u_int32_t db_threadid_t;
+ 
+ /* Basic types that are exported or quasi-exported. */
+ typedef	u_int32_t	db_pgno_t;	/* Page number type. */
+--- db-4.8.30.old/dbinc/repmgr.h	2010-04-13 04:25:22.000000000 +0800
++++ db-4.8.30/dbinc/repmgr.h	2012-02-22 11:20:25.277409800 +0800
+@@ -499,7 +499,6 @@
+ #define	INPROGRESS		WSAEWOULDBLOCK
+ 
+ #define	net_errno		WSAGetLastError()
+-typedef int socklen_t;
+ typedef char * sockopt_t;
+ 
+ #define	iov_len len
+--- db-4.8.30.old/dist/Makefile.in	2010-04-13 04:25:22.000000000 +0800
++++ db-4.8.30/dist/Makefile.in	2012-02-22 11:33:13.152511600 +0800
+@@ -198,7 +198,7 @@
+ REPMGR_OBJS=\
+ 	os_addrinfo@o@\
+ 	repmgr_auto@o@ repmgr_elect@o@ repmgr_method@o@ repmgr_msg@o@ \
+-	repmgr_net@o@ repmgr_posix@o@ repmgr_queue@o@ repmgr_sel@o@ \
++	repmgr_net@o@ repmgr_windows@o@ repmgr_queue@o@ repmgr_sel@o@ \
+ 	repmgr_stat@o@ repmgr_util@o@
+ PRINT_OBJS=\
+ 	btree_autop@o@ crdel_autop@o@ db_autop@o@ dbreg_autop@o@ \
+@@ -1952,7 +1952,7 @@
+ 	$(CC) $(CFLAGS) $?
+ repmgr_net@o@: $(srcdir)/repmgr/repmgr_net.c
+ 	$(CC) $(CFLAGS) $?
+-repmgr_posix@o@: $(srcdir)/repmgr/repmgr_posix.c
++repmgr_windows@o@: $(srcdir)/repmgr/repmgr_windows.c
+ 	$(CC) $(CFLAGS) $?
+ repmgr_queue@o@: $(srcdir)/repmgr/repmgr_queue.c
+ 	$(CC) $(CFLAGS) $?

@@ -1,0 +1,191 @@
+--- db-4.8.30.old/tcl/tcl_compat.c	2010-04-13 04:25:35.000000000 +0800
++++ db-4.8.30/tcl/tcl_compat.c	2012-02-22 16:13:04.667028100 +0800
+@@ -11,9 +11,7 @@
+ 
+ #define	DB_DBM_HSEARCH	1
+ #include "db_int.h"
+-#ifdef HAVE_SYSTEM_INCLUDE_FILES
+ #include <tcl.h>
+-#endif
+ #include "dbinc/tcl_db.h"
+ 
+ /*
+--- db-4.8.30.old/tcl/tcl_db.c	2010-04-13 04:25:35.000000000 +0800
++++ db-4.8.30/tcl/tcl_db.c	2012-02-22 16:13:04.682628100 +0800
+@@ -9,9 +9,7 @@
+ #include "db_config.h"
+ 
+ #include "db_int.h"
+-#ifdef HAVE_SYSTEM_INCLUDE_FILES
+ #include <tcl.h>
+-#endif
+ #include "dbinc/db_page.h"
+ #include "dbinc/db_am.h"
+ #include "dbinc/tcl_db.h"
+--- db-4.8.30.old/tcl/tcl_db_pkg.c	2010-04-13 04:25:35.000000000 +0800
++++ db-4.8.30/tcl/tcl_db_pkg.c	2012-02-22 16:13:04.698228100 +0800
+@@ -13,9 +13,7 @@
+ #endif
+ 
+ #include "db_int.h"
+-#ifdef HAVE_SYSTEM_INCLUDE_FILES
+ #include <tcl.h>
+-#endif
+ #include "dbinc/db_page.h"
+ #include "dbinc/hash.h"
+ #include "dbinc/tcl_db.h"
+--- db-4.8.30.old/tcl/tcl_dbcursor.c	2010-04-13 04:25:35.000000000 +0800
++++ db-4.8.30/tcl/tcl_dbcursor.c	2012-02-22 16:13:04.698228100 +0800
+@@ -9,9 +9,7 @@
+ #include "db_config.h"
+ 
+ #include "db_int.h"
+-#ifdef HAVE_SYSTEM_INCLUDE_FILES
+ #include <tcl.h>
+-#endif
+ #include "dbinc/tcl_db.h"
+ 
+ /*
+--- db-4.8.30.old/tcl/tcl_env.c	2010-04-13 04:25:35.000000000 +0800
++++ db-4.8.30/tcl/tcl_env.c	2012-02-22 16:13:04.713828200 +0800
+@@ -9,9 +9,7 @@
+ #include "db_config.h"
+ 
+ #include "db_int.h"
+-#ifdef HAVE_SYSTEM_INCLUDE_FILES
+ #include <tcl.h>
+-#endif
+ #include "dbinc/lock.h"
+ #include "dbinc/txn.h"
+ #include "dbinc/tcl_db.h"
+--- db-4.8.30.old/tcl/tcl_internal.c	2010-04-13 04:25:35.000000000 +0800
++++ db-4.8.30/tcl/tcl_internal.c	2012-02-22 16:13:04.729428200 +0800
+@@ -9,9 +9,7 @@
+ #include "db_config.h"
+ 
+ #include "db_int.h"
+-#ifdef HAVE_SYSTEM_INCLUDE_FILES
+ #include <tcl.h>
+-#endif
+ #include "dbinc/tcl_db.h"
+ #include "dbinc/db_page.h"
+ #include "dbinc/db_am.h"
+--- db-4.8.30.old/tcl/tcl_lock.c	2010-04-13 04:25:35.000000000 +0800
++++ db-4.8.30/tcl/tcl_lock.c	2012-02-22 16:13:04.745028200 +0800
+@@ -9,9 +9,7 @@
+ #include "db_config.h"
+ 
+ #include "db_int.h"
+-#ifdef HAVE_SYSTEM_INCLUDE_FILES
+ #include <tcl.h>
+-#endif
+ #include "dbinc/tcl_db.h"
+ 
+ /*
+--- db-4.8.30.old/tcl/tcl_log.c	2010-04-13 04:25:35.000000000 +0800
++++ db-4.8.30/tcl/tcl_log.c	2012-02-22 16:13:04.745028200 +0800
+@@ -9,9 +9,7 @@
+ #include "db_config.h"
+ 
+ #include "db_int.h"
+-#ifdef HAVE_SYSTEM_INCLUDE_FILES
+ #include <tcl.h>
+-#endif
+ #include "dbinc/log.h"
+ #include "dbinc/tcl_db.h"
+ 
+--- db-4.8.30.old/tcl/tcl_mp.c	2010-04-13 04:25:35.000000000 +0800
++++ db-4.8.30/tcl/tcl_mp.c	2012-02-22 16:13:04.760628300 +0800
+@@ -9,9 +9,7 @@
+ #include "db_config.h"
+ 
+ #include "db_int.h"
+-#ifdef HAVE_SYSTEM_INCLUDE_FILES
+ #include <tcl.h>
+-#endif
+ #include "dbinc/tcl_db.h"
+ 
+ /*
+--- db-4.8.30.old/tcl/tcl_mutex.c	2010-04-13 04:25:35.000000000 +0800
++++ db-4.8.30/tcl/tcl_mutex.c	2012-02-22 16:13:04.760628300 +0800
+@@ -9,9 +9,7 @@
+ #include "db_config.h"
+ 
+ #include "db_int.h"
+-#ifdef HAVE_SYSTEM_INCLUDE_FILES
+ #include <tcl.h>
+-#endif
+ #include "dbinc/tcl_db.h"
+ 
+ #ifdef CONFIG_TEST
+--- db-4.8.30.old/tcl/tcl_rep.c	2010-04-13 04:25:35.000000000 +0800
++++ db-4.8.30/tcl/tcl_rep.c	2012-02-22 16:13:04.776228300 +0800
+@@ -9,9 +9,7 @@
+ #include "db_config.h"
+ 
+ #include "db_int.h"
+-#ifdef HAVE_SYSTEM_INCLUDE_FILES
+ #include <tcl.h>
+-#endif
+ #include "dbinc/tcl_db.h"
+ 
+ #ifdef CONFIG_TEST
+--- db-4.8.30.old/tcl/tcl_seq.c	2010-04-13 04:25:35.000000000 +0800
++++ db-4.8.30/tcl/tcl_seq.c	2012-02-22 16:13:04.791828300 +0800
+@@ -10,9 +10,7 @@
+ #ifdef HAVE_64BIT_TYPES
+ 
+ #include "db_int.h"
+-#ifdef HAVE_SYSTEM_INCLUDE_FILES
+ #include <tcl.h>
+-#endif
+ #include "dbinc/tcl_db.h"
+ #include "dbinc_auto/sequence_ext.h"
+ 
+--- db-4.8.30.old/tcl/tcl_txn.c	2010-04-13 04:25:35.000000000 +0800
++++ db-4.8.30/tcl/tcl_txn.c	2012-02-22 16:13:04.791828300 +0800
+@@ -9,9 +9,7 @@
+ #include "db_config.h"
+ 
+ #include "db_int.h"
+-#ifdef HAVE_SYSTEM_INCLUDE_FILES
+ #include <tcl.h>
+-#endif
+ #include "dbinc/tcl_db.h"
+ 
+ static int tcl_TxnCommit __P((Tcl_Interp *,
+--- db-4.8.30.old/tcl/tcl_util.c	2010-04-13 04:25:35.000000000 +0800
++++ db-4.8.30/tcl/tcl_util.c	2012-02-22 16:13:04.807428300 +0800
+@@ -9,9 +9,7 @@
+ #include "db_config.h"
+ 
+ #include "db_int.h"
+-#ifdef HAVE_SYSTEM_INCLUDE_FILES
+ #include <tcl.h>
+-#endif
+ #include "dbinc/tcl_db.h"
+ 
+ /*
+--- db-4.8.30.old/dist/aclocal/tcl.m4	2010-04-13 04:25:22.000000000 +0800
++++ db-4.8.30/dist/aclocal/tcl.m4	2012-02-22 17:03:50.267222000 +0800
+@@ -110,6 +110,8 @@
+ 	aix*)
+ 		LIBTSO_LIBS="$LIBTSO_LIBS $TCL_LIB_SPEC $TCL_LIB_FLAG"
+ 		LIBTSO_LIBS="$LIBTSO_LIBS -L$TCL_EXEC_PREFIX/lib -ltcl$TCL_VERSION";;
++	mingw*)
++		LIBTSO_LIBS="$LIBTSO_LIBS $TCL_LIB_SPEC";;
+ 	esac
+ 	AC_SUBST(TCL_BIN_DIR)
+ 	AC_SUBST(TCL_INCLUDE_SPEC)
+
+--- db-4.8.30.old/dist/configure.ac	2010-04-13 04:25:23.000000000 +0800
++++ db-4.8.30/dist/configure.ac	2012-02-25 00:13:24.315931200 +0800
+@@ -350,7 +350,7 @@
+     darwin*)
+         LIBTSO_MODULE=""
+         LIBTSO_MODSUFFIX=".dylib";;
+-    *qnx*)
++    *qnx* | mingw*)
+         LIBTSO_MODULE=""
+         LIBTSO_MODSUFFIX=$MODSUFFIX;;
+     *)

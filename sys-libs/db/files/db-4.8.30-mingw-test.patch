@@ -1,0 +1,32 @@
+--- db-4.8.30.old/dist/s_test	2010-04-13 04:25:23.000000000 +0800
++++ db-4.8.30/dist/s_test	2012-02-24 11:03:03.180514700 +0800
+@@ -20,9 +20,10 @@
+  echo "set rpc_path ."			 	&& \
+  echo "set rpc_testdir \$rpc_path/TESTDIR"	&& \
+  echo ""					&& \
+- echo "set src_root @srcdir@/.."		&& \
+- echo "set test_path @srcdir@/../test"		&& \
+- echo "set je_root @srcdir@/../../je"		&& \
++ echo "set buildpath .libs/"			&& \
++ echo "set src_root .."				&& \
++ echo "set test_path ../test"			&& \
++ echo "set je_root ../../je"			&& \
+  echo ""					&& \
+  echo "global testdir"				&& \
+  echo "set testdir ./TESTDIR"			&& \
+--- db-4.8.30.old/test/include.tcl	2010-04-13 04:25:35.000000000 +0800
++++ db-4.8.30/test/include.tcl	2012-02-24 13:19:48.800863100 +0800
+@@ -7,9 +7,10 @@
+ set rpc_path .
+ set rpc_testdir $rpc_path/TESTDIR
+ 
+-set src_root @srcdir@/..
+-set test_path @srcdir@/../test
+-set je_root @srcdir@/../../je
++set buildpath .libs/
++set src_root ..
++set test_path ../test
++set je_root ../../je
+ 
+ global testdir
+ set testdir ./TESTDIR

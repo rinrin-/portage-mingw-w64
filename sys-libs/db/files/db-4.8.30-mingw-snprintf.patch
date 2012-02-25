@@ -1,0 +1,55 @@
+--- db-4.8.30.old/dbinc_auto/clib_ext.h	2010-04-13 04:25:22.000000000 +0800
++++ db-4.8.30/dbinc_auto/clib_ext.h	2012-02-22 17:49:20.328396400 +0800
+@@ -58,9 +58,6 @@
+ int rand __P((void));
+ void srand __P((unsigned int));
+ #endif
+-#ifndef HAVE_SNPRINTF
+-int snprintf __P((char *, size_t, const char *, ...));
+-#endif
+ #ifndef HAVE_VSNPRINTF
+ int vsnprintf __P((char *, size_t, const char *, va_list));
+ #endif
+--- db-4.8.30.old/dist/aclocal/sequence.m4	2010-04-13 04:25:22.000000000 +0800
++++ db-4.8.30/dist/aclocal/sequence.m4	2012-02-22 22:41:54.349230100 +0800
+@@ -43,6 +43,7 @@
+ 	# test, which won't test for the appropriate printf format strings.
+ 	if test "$db_cv_build_sequence" = "yes"; then
+ 		AC_TRY_RUN([
++		#include <stdio.h>
+ 		main() {
+ 			$db_cv_seq_type l;
+ 			unsigned $db_cv_seq_type u;
+@@ -59,7 +60,7 @@
+ 				return (1);
+ 			return (0);
+ 		}],, [db_cv_build_sequence="no"],
+-		AC_TRY_LINK(,[
++		AC_TRY_LINK([#include <stdio.h>],[
+ 			$db_cv_seq_type l;
+ 			unsigned $db_cv_seq_type u;
+ 			char buf@<:@100@:>@;
+
+--- db-4.8.30.old/dist/clib_port.in	2010-04-13 04:25:23.000000000 +0800
++++ db-4.8.30/dist/clib_port.in	2012-02-22 17:49:20.328396400 +0800
+@@ -231,9 +231,6 @@
+ #define	rand		__db_Crand
+ #define	srand		__db_Csrand
+ #endif
+-#ifndef	HAVE_SNPRINTF
+-#define	snprintf	__db_Csnprintf
+-#endif
+ #ifndef	HAVE_STRCASECMP
+ #define	strcasecmp	__db_Cstrcasecmp
+ #define	strncasecmp	__db_Cstrncasecmp
+--- db-4.8.30.old/dist/Makefile.in	2010-04-13 04:25:22.000000000 +0800
++++ db-4.8.30/dist/Makefile.in	2012-02-22 17:49:20.343996400 +0800
+@@ -229,7 +229,7 @@
+ 	os_open@o@ os_pid@o@ os_rename@o@ os_root@o@ os_rpath@o@ \
+ 	os_rw@o@ os_seek@o@ os_stack@o@ os_stat@o@ os_tmpdir@o@ \
+ 	os_truncate@o@ os_uid@o@ os_unlink@o@ os_yield@o@ partition@o@ \
+-	seq_stat@o@ sequence@o@ sha1@o@ snprintf@o@ txn@o@ txn_auto@o@ \
++	seq_stat@o@ sequence@o@ sha1@o@ txn@o@ txn_auto@o@ \
+ 	txn_chkpt@o@ txn_failchk@o@ txn_method@o@ txn_rec@o@ txn_recover@o@ \
+ 	txn_region@o@ txn_stat@o@ txn_util@o@ zerofill@o@
+ 

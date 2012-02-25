@@ -1,0 +1,13 @@
+--- db-4.8.30.old/dist/configure.ac	2010-04-13 04:25:23.000000000 +0800
++++ db-4.8.30/dist/configure.ac	2012-02-22 15:35:39.040735000 +0800
+@@ -342,8 +342,8 @@
+ 
+ case "$host_os" in
+ cygwin* | mingw*)
+-	MAKEFILE_SOLINK="$MAKEFILE_SOLINK -no-undefined"
+-	MAKEFILE_XSOLINK="$MAKEFILE_XSOLINK -no-undefined";;
++	MAKEFILE_SOLINK="$MAKEFILE_SOLINK -no-undefined -lws2_32"
++	MAKEFILE_XSOLINK="$MAKEFILE_XSOLINK -no-undefined -lws2_32";;
+ esac
+ 
+ case "$host_os" in
