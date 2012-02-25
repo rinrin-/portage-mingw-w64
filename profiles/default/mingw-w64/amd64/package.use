@@ -9,3 +9,4 @@ media-libs/jbig2dec	static-libs png
 media-libs/freeglut	static-libs
 media-libs/tiff		cxx jbig jpeg lzma static-libs zlib
 dev-lang/tcl		threads
+dev-lang/tk		threads
