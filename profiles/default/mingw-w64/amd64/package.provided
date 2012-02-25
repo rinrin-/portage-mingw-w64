@@ -14,3 +14,4 @@ sys-devel/binutils-2.22
 app-arch/xz-utils-5.0.2
 sys-devel/gcc-4.5.3
 sys-devel/m4-1.4.16
+app-arch/unzip-6.0

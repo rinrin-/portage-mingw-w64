@@ -8,3 +8,4 @@
 # the patch does not currently apply, and needs some work.
 >=x11-proto/xproto-7.0.16
 >=media-libs/freeglut-2.8.0
+app-arch/unzip
