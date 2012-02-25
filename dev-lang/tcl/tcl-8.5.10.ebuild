@@ -152,6 +152,9 @@ src_install() {
 
 	cd "${S}"
 	dodoc ChangeLog* README changes || die
+	
+	dodir /etc/env.d
+    echo "TCL_LIBRARY=${EPREFIX}/usr/$(get_libdir)/tcl${PV%.*}" >>"${D}etc/env.d/00tcl"
 }
 
 pkg_postinst() {
@@ -163,6 +166,4 @@ pkg_postinst() {
 	ewarn "If you have dev-lang/tk and dev-tcltk/tclx installed you should"
 	ewarn "upgrade them before this recompilation, too,"
 	ewarn
-	ewarn "After installation on win32 platform, please add TCL_LIBRARY environment variable"
-	ewarn "TCL_LIBRARY=${EPREFIX}/usr/$(get_libdir)/tcl${PV%.*}"
 }
