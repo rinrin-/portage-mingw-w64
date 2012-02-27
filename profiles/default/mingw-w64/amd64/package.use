@@ -2,6 +2,7 @@ dev-libs/libxml2	readline history
 dev-libs/libxslt	static-libs
 dev-libs/gmp		doc cxx
 dev-libs/apr		static-libs
+dev-libs/apr-util	berkdb gdbm sqlite static-libs
 media-libs/giflib	static-libs
 media-libs/jpeg		static-libs
 media-libs/libpng	static-libs

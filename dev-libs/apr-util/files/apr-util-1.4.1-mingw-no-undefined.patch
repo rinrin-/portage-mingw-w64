@@ -1,0 +1,25 @@
+--- apr-util-1.4.1.old/configure.in	2009-12-18 03:15:19.000000000 +0800
++++ apr-util-1.4.1/configure.in	2012-02-27 13:34:07.192084000 +0800
+@@ -208,6 +208,10 @@
+ AC_SUBST(APU_MODULES)
+ AC_SUBST(EXTRA_OBJECTS)
+ 
++case $host in
++  *-mingw*) APR_ADDTO(APRUTIL_LDFLAGS,[-no-undefined -Wl,--export-all-symbols]) ;;
++esac
++
+ dnl
+ dnl Prep all the flags and stuff for compilation and export to other builds
+ dnl
+
+--- apr-util-1.4.1.old/Makefile.in	2008-11-21 14:30:43.000000000 +0800
++++ apr-util-1.4.1/Makefile.in	2012-02-27 16:34:27.660239900 +0800
+@@ -23,7 +23,7 @@
+ INSTALL_DATA = @INSTALL_DATA@
+ 
+ APU_MODULES = @APU_MODULES@
+-LINK_MODULE = $(LIBTOOL) $(LTFLAGS) --mode=link $(CC) $(LT_LDFLAGS) $(ALL_CFLAGS) $(ALL_LDFLAGS) $(APRUTIL_LDFLAGS) -release $(APRUTIL_MAJOR_VERSION) -module -rpath $(APU_DSO_LIBDIR)
++LINK_MODULE = $(LIBTOOL) $(LTFLAGS) --mode=link $(CC) $(LT_LDFLAGS) $(ALL_CFLAGS) $(ALL_LDFLAGS) $(APRUTIL_LDFLAGS) -release $(APRUTIL_MAJOR_VERSION) -module -rpath $(APU_DSO_LIBDIR) -lapr-1 -laprutil-1
+ APU_DSO_LIBDIR = @APU_DSO_LIBDIR@
+ 
+ LT_VERSION = @APU_LTVERSION@
