@@ -40,5 +40,5 @@ src_configure() {
 src_install() {
 	emake DESTDIR="${D}" install || die
 	dodoc CHANGES README
-	find "${D}" -name '*.la' -delete
+	find "${ED}" -name '*.la' -delete
 }

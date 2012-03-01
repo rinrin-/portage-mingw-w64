@@ -106,48 +106,48 @@ src_install() {
 		    -e "s,^\(TK_SRC_DIR='\)${nS}',\1${EPREFIX}/usr/${mylibdir}/tk${v1}/include'," \
 		    -e "s,^\(TK_BUILD_STUB_LIB_SPEC='-L\)${nS}/win,\1${EPREFIX}/usr/${mylibdir}," \
 		    -e "s,^\(TK_BUILD_STUB_LIB_PATH='\)${nS}/win,\1${EPREFIX}/usr/${mylibdir}," \
-		    "${D}${EPREFIX}"/usr/${mylibdir}/tkConfig.sh || die
+		    "${ED}"/usr/${mylibdir}/tkConfig.sh || die
 	else
 	    sed -i \
 		    -e "s,^\(TK_BUILD_LIB_SPEC='-L\)${nS}/unix,\1${EPREFIX}/usr/${mylibdir}," \
 		    -e "s,^\(TK_SRC_DIR='\)${nS}',\1${EPREFIX}/usr/${mylibdir}/tk${v1}/include'," \
 		    -e "s,^\(TK_BUILD_STUB_LIB_SPEC='-L\)${nS}/unix,\1${EPREFIX}/usr/${mylibdir}," \
 		    -e "s,^\(TK_BUILD_STUB_LIB_PATH='\)${nS}/unix,\1${EPREFIX}/usr/${mylibdir}," \
-		    "${D}${EPREFIX}"/usr/${mylibdir}/tkConfig.sh || die
+		    "${ED}"/usr/${mylibdir}/tkConfig.sh || die
 	fi
 
 	if [[ ${CHOST} != *-darwin* ]]; then
 		sed -i \
 				-e "s,^\(TK_CC_SEARCH_FLAGS='.*\)',\1:${EPREFIX}/usr/${mylibdir}'," \
 				-e "s,^\(TK_LD_SEARCH_FLAGS='.*\)',\1:${EPREFIX}/usr/${mylibdir}'," \
-				"${D}${EPREFIX}"/usr/${mylibdir}/tkConfig.sh || die
+				"${ED}"/usr/${mylibdir}/tkConfig.sh || die
 	fi
 
 	# install private headers
 	if [[ ${CHOST} == *-mingw* ]]; then
-		insinto ${EPREFIX}/usr/${mylibdir}/tk${v1}/include/win
+		insinto /usr/${mylibdir}/tk${v1}/include/win
 	    doins "${S}"/win/*.h || die
 	else
-	    insinto ${EPREFIX}/usr/${mylibdir}/tk${v1}/include/unix
+	    insinto /usr/${mylibdir}/tk${v1}/include/unix
 	    doins "${S}"/unix/*.h || die
 	fi
-	insinto ${EPREFIX}/usr/${mylibdir}/tk${v1}/include/generic
+	insinto /usr/${mylibdir}/tk${v1}/include/generic
 	doins "${S}"/generic/*.h || die
-	rm -f "${D}${EPREFIX}"/usr/${mylibdir}/tk${v1}/include/generic/tk.h
-	rm -f "${D}${EPREFIX}"/usr/${mylibdir}/tk${v1}/include/generic/tkDecls.h
-	rm -f "${D}${EPREFIX}"/usr/${mylibdir}/tk${v1}/include/generic/tkPlatDecls.h
+	rm -f "${ED}"/usr/${mylibdir}/tk${v1}/include/generic/tk.h
+	rm -f "${ED}"/usr/${mylibdir}/tk${v1}/include/generic/tkDecls.h
+	rm -f "${ED}"/usr/${mylibdir}/tk${v1}/include/generic/tkPlatDecls.h
 
 	# install symlink for libraries
 	if [[ ${CHOST} != *-mingw* ]]; then
-	    #dosym libtk${v1}.a ${EPREFIX}/usr/${mylibdir}/libtk.a
-	    dosym libtk${v1}$(get_libname) ${EPREFIX}/usr/${mylibdir}/libtk$(get_libname) || die
-	    dosym wish${v1} ${EPREFIX}/usr/bin/wish || die
+	    #dosym libtk${v1}.a /usr/${mylibdir}/libtk.a
+	    dosym libtk${v1}$(get_libname) /usr/${mylibdir}/libtk$(get_libname) || die
+	    dosym wish${v1} /usr/bin/wish || die
 	fi
-	dosym libtkstub${v1}.a ${EPREFIX}/usr/${mylibdir}/libtkstub.a || die
+	dosym libtkstub${v1}.a /usr/${mylibdir}/libtkstub.a || die
 
     if [[ ${CHOST} == *-mingw* ]]; then
-        rm -fr "${D}${EPREFIX}"/usr/lib
-        rm -fr "${D}${EPREFIX}"/usr/include/X11
+        rm -fr "${ED}"/usr/lib
+        rm -fr "${ED}"/usr/include/X11
     fi
 
 	cd "${S}"

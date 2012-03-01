@@ -35,7 +35,7 @@ src_install() {
 	dobin pbmtools/jbgtopbm{,85} pbmtools/pbmtojbg{,85} || die
 	doman pbmtools/jbgtopbm.1 pbmtools/pbmtojbg.1
 
-	insinto ${EPREFIX}/usr/include
+	insinto /usr/include
 	doins libjbig/*.h || die
 	dolib libjbig/libjbig{,85}{.a,.dll.a} || die
 	dobin libjbig/libjbig{,85}.dll || die

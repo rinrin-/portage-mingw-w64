@@ -101,5 +101,5 @@ src_install() {
 
 	# This file is only used on AIX systems, which Gentoo is not,
 	# and causes collisions between the SLOTs, so remove it.
-	rm -f "${D}${EPREFIX}/usr/$(get_libdir)/aprutil.exp"
+	rm -f "${ED}/usr/$(get_libdir)/aprutil.exp"
 }

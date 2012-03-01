@@ -113,7 +113,7 @@ src_install() {
 		    -e "s,^TCL_BUILD_STUB_LIB_SPEC='-L.*/win,TCL_BUILD_STUB_LIB_SPEC='-L${EPREFIX}/usr/${mylibdir}," \
 		    -e "s,^TCL_BUILD_STUB_LIB_PATH='.*/win,TCL_BUILD_STUB_LIB_PATH='${EPREFIX}/usr/${mylibdir}," \
 		    -e "s,^TCL_LIB_FILE='libtcl${v1}..TCL_DBGX..so',TCL_LIB_FILE=\"libtcl${v1}\$\{TCL_DBGX\}.so\"," \
-		    "${D}${EPREFIX}"/usr/${mylibdir}/tclConfig.sh || die
+		    "${ED}"/usr/${mylibdir}/tclConfig.sh || die
 	else
 	    sed -i \
 		    -e "s,^TCL_BUILD_LIB_SPEC='-L.*/unix,TCL_BUILD_LIB_SPEC='-L${EPREFIX}/usr/${mylibdir}," \
@@ -121,34 +121,34 @@ src_install() {
 		    -e "s,^TCL_BUILD_STUB_LIB_SPEC='-L.*/unix,TCL_BUILD_STUB_LIB_SPEC='-L${EPREFIX}/usr/${mylibdir}," \
 		    -e "s,^TCL_BUILD_STUB_LIB_PATH='.*/unix,TCL_BUILD_STUB_LIB_PATH='${EPREFIX}/usr/${mylibdir}," \
 		    -e "s,^TCL_LIB_FILE='libtcl${v1}..TCL_DBGX..so',TCL_LIB_FILE=\"libtcl${v1}\$\{TCL_DBGX\}.so\"," \
-		    "${D}${EPREFIX}"/usr/${mylibdir}/tclConfig.sh || die
+		    "${ED}"/usr/${mylibdir}/tclConfig.sh || die
 	fi
 	[[ ${CHOST} != *-darwin* && ${CHOST} != *-mint* ]] && sed -i \
 		-e "s,^TCL_CC_SEARCH_FLAGS='\(.*\)',TCL_CC_SEARCH_FLAGS='\1:${EPREFIX}/usr/${mylibdir}'," \
 		-e "s,^TCL_LD_SEARCH_FLAGS='\(.*\)',TCL_LD_SEARCH_FLAGS='\1:${EPREFIX}/usr/${mylibdir}'," \
-		"${D}${EPREFIX}"/usr/${mylibdir}/tclConfig.sh
+		"${ED}"/usr/${mylibdir}/tclConfig.sh
 
 	# install private headers
 	if [[ ${CHOST} == *-mingw* ]]; then
-		insinto ${EPREFIX}/usr/${mylibdir}/tcl${v1}/include/win
+		insinto /usr/${mylibdir}/tcl${v1}/include/win
 	    doins "${S}"/win/*.h || die
 	    doins "${S}"/win/cat.c || die
 	else
-	    insinto ${EPREFIX}/usr/${mylibdir}/tcl${v1}/include/unix
+	    insinto /usr/${mylibdir}/tcl${v1}/include/unix
 	    doins "${S}"/unix/*.h || die
 	fi
-	insinto ${EPREFIX}/usr/${mylibdir}/tcl${v1}/include/generic
+	insinto /usr/${mylibdir}/tcl${v1}/include/generic
 	doins "${S}"/generic/*.h || die
-	rm -f "${D}${EPREFIX}"/usr/${mylibdir}/tcl${v1}/include/generic/tcl.h
-	rm -f "${D}${EPREFIX}"/usr/${mylibdir}/tcl${v1}/include/generic/tclDecls.h
-	rm -f "${D}${EPREFIX}"/usr/${mylibdir}/tcl${v1}/include/generic/tclPlatDecls.h
+	rm -f "${ED}"/usr/${mylibdir}/tcl${v1}/include/generic/tcl.h
+	rm -f "${ED}"/usr/${mylibdir}/tcl${v1}/include/generic/tclDecls.h
+	rm -f "${ED}"/usr/${mylibdir}/tcl${v1}/include/generic/tclPlatDecls.h
 
 	# install symlink for libraries
 	if [[ ${CHOST} != *-mingw* ]]; then
-	    dosym libtcl${v1}$(get_libname) ${EPREFIX}/usr/${mylibdir}/libtcl$(get_libname) || die
-	    dosym tclsh${v1} ${EPREFIX}/usr/bin/tclsh || die
+	    dosym libtcl${v1}$(get_libname) /usr/${mylibdir}/libtcl$(get_libname) || die
+	    dosym tclsh${v1} /usr/bin/tclsh || die
 	fi
-	dosym libtclstub${v1}.a ${EPREFIX}/usr/${mylibdir}/libtclstub.a || die
+	dosym libtclstub${v1}.a /usr/${mylibdir}/libtclstub.a || die
 
 	cd "${S}"
 	dodoc ChangeLog* README changes || die

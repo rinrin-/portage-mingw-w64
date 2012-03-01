@@ -43,7 +43,7 @@ src_compile() {
 
 src_install() {
 	emake -j1 INSTALL_ROOT="${D}" install install-compat || die
-	mv "${D}${EPREFIX}"/usr/include/gdbm/gdbm.h "${D}${EPREFIX}"/usr/include/ || die
+	mv "${ED}"/usr/include/gdbm/gdbm.h "${ED}"/usr/include/ || die
 	dodoc ChangeLog NEWS README
 }
 

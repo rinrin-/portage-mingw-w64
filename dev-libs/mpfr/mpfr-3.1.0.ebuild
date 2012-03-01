@@ -62,10 +62,10 @@ src_configure() {
 
 src_install() {
 	emake install DESTDIR="${D}" || die
-	use static-libs || rm -f "${D}${EPREFIX}"/usr/$(get_libdir)/libmpfr.la
+	use static-libs || rm -f "${ED}"/usr/$(get_libdir)/libmpfr.la
 
 	# clean up html/license install
-	pushd "${D}${EPREFIX}"/usr/share/doc/${PF} >/dev/null
+	pushd "${ED}"/usr/share/doc/${PF} >/dev/null
 	dohtml *.html && rm COPYING* *.html || die
 	popd >/dev/null
 	# some, but not all, are already installed

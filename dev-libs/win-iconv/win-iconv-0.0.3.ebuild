@@ -32,9 +32,9 @@ src_test() {
 }
 
 src_install() {
-  insinto "${EPREFIX}/usr/include" && doins "${WORKDIR}/${P}/iconv.h"
-  insopts -m0755 && insinto "${EPREFIX}/usr/bin" && doins "${WORKDIR}/${P}/iconv.dll"
-  insopts -m0755 && insinto "${EPREFIX}/usr/bin" && doins "${WORKDIR}/${P}/win_iconv.exe"
-  insinto "${EPREFIX}/usr/lib64" && doins "${WORKDIR}/${P}/libiconv.a"
-  insinto "${EPREFIX}/usr/lib64" && doins "${WORKDIR}/${P}/libiconv.dll.a"
+  insinto "/usr/include" && doins "${WORKDIR}/${P}/iconv.h"
+  insopts -m0755 && insinto "/usr/bin" && doins "${WORKDIR}/${P}/iconv.dll"
+  insopts -m0755 && insinto "/usr/bin" && doins "${WORKDIR}/${P}/win_iconv.exe"
+  insinto "/usr/lib64" && doins "${WORKDIR}/${P}/libiconv.a"
+  insinto "/usr/lib64" && doins "${WORKDIR}/${P}/libiconv.dll.a"
 }

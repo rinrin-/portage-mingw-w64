@@ -38,6 +38,6 @@ src_compile() {
 
 src_install() {
 	emake DESTDIR="${D}" install || die
-	use static-libs || rm "${D}${EPREFIX}"/usr/$(get_libdir)/libmpc.la
+	use static-libs || rm "${ED}"/usr/$(get_libdir)/libmpc.la
 	dodoc ChangeLog NEWS README TODO
 }

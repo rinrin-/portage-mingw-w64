@@ -110,7 +110,7 @@ src_install() {
 
 	if ! use static-libs; then
 		# Remove useless .la files
-		find "${D}" -name '*.la' -exec rm -f {} + || die "la file removal failed"
+		find "${ED}" -name '*.la' -exec rm -f {} + || die "la file removal failed"
 	fi
 }
 

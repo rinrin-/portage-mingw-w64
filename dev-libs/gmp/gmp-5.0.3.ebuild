@@ -83,9 +83,9 @@ src_install() {
 	emake DESTDIR="${D}" install || die
 
 	# should be a standalone lib
-	rm -f "${D}"/usr/$(get_libdir)/libgmp.la
+	rm -f "${ED}"/usr/$(get_libdir)/libgmp.la
 	# this requires libgmp
-	local la="${D}/usr/$(get_libdir)/libgmpxx.la"
+	local la="${ED}/usr/$(get_libdir)/libgmpxx.la"
 	use static-libs \
 		&& sed -i 's:/[^ ]*/libgmp.la:-lgmp:' "${la}" \
 		|| rm -f "${la}"
@@ -94,7 +94,7 @@ src_install() {
 	dodoc doc/configuration doc/isa_abi_headache
 	dohtml -r doc
 
-	use doc && cp "${DISTDIR}"/gmp-man-${MY_PV}.pdf "${D}"/usr/share/doc/${PF}/
+	use doc && cp "${DISTDIR}"/gmp-man-${MY_PV}.pdf "${ED}"/usr/share/doc/${PF}/
 }
 
 pkg_preinst() {

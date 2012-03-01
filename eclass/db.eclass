@@ -66,11 +66,11 @@ db_fix_so() {
 db_src_install_doc() {
 	# not everybody wants this wad of documentation as it is primarily API docs
 	if use doc; then
-		dodir ${EPREFIX}/usr/share/doc/${PF}/html
-		mv "${D}${EPREFIX}"/usr/docs/* "${D}${EPREFIX}"/usr/share/doc/${PF}/html/
-		rm -rf "${D}${EPREFIX}"/usr/docs
+		dodir /usr/share/doc/${PF}/html
+		mv "${ED}"/usr/docs/* "${ED}"/usr/share/doc/${PF}/html/
+		rm -rf "${ED}"/usr/docs
 	else
-		rm -rf "${D}${EPREFIX}"/usr/docs
+		rm -rf "${ED}"/usr/docs
 	fi
 
 	db_src_install_examples
@@ -95,7 +95,7 @@ db_src_install_examples() {
 
 db_src_install_usrbinslot() {
 	# slot all program names to avoid overwriting
-	for fname in "${D}${EPREFIX}"/usr/bin/db*
+	for fname in "${ED}"/usr/bin/db*
 	do
 		dn="$(dirname "${fname}")"
 		bn="$(basename "${fname}")"
@@ -107,12 +107,12 @@ db_src_install_usrbinslot() {
 
 db_src_install_headerslot() {
 	# install all headers in a slotted location
-	dodir ${EPREFIX}/usr/include/db${SLOT}
-	mv "${D}${EPREFIX}"/usr/include/*.h "${D}${EPREFIX}"/usr/include/db${SLOT}/
+	dodir /usr/include/db${SLOT}
+	mv "${ED}"/usr/include/*.h "${ED}"/usr/include/db${SLOT}/
 }
 
 db_src_install_usrlibcleanup() {
-	LIB="${D}${EPREFIX}/usr/$(get_libdir)"
+	LIB="${ED}/usr/$(get_libdir)"
 	# Clean out the symlinks so that they will not be recorded in the
 	# contents (bug #60732)
 
@@ -136,7 +136,7 @@ db_src_install_usrlibcleanup() {
 	find "${LIB}" -maxdepth 1 -type l -name 'libdb[1._-]*a' -exec rm \{} \;
 
 	rm -f \
-		"${D}${EPREFIX}"/usr/include/{db,db_185}.h \
+		"${ED}"/usr/include/{db,db_185}.h \
 		"${LIB}"/libdb{,_{cxx,sql,stl,java,tcl}}.a
 }
 

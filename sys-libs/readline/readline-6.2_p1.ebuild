@@ -26,6 +26,7 @@ patches() {
 	fi
 }
 
+EAPI="3"
 DESCRIPTION="Another cute console display library"
 HOMEPAGE="http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html"
 SRC_URI="mirror://gnu/${PN}/${MY_P}.tar.gz $(patches)"
@@ -86,7 +87,7 @@ src_compile() {
 }
 
 src_install() {
-	emake DESTDIR="${D}${EPREFIX}" install || die
+	emake DESTDIR="${D}" install || die
 	# mingw-w64 unsupported
 	#gen_usr_ldscript -a readline history #4411
 

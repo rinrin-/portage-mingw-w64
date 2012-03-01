@@ -54,8 +54,8 @@ src_prepare() {
 src_compile() { :;}
 
 src_install() {
-	insinto ${EPREFIX}/usr/share/${PN}
+	insinto /usr/share/${PN}
 	doins config.{sub,guess} || die
-	fperms +x ${EPREFIX}/usr/share/${PN}/config.{sub,guess}
+	fperms +x /usr/share/${PN}/config.{sub,guess}
 	dodoc ChangeLog
 }

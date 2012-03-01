@@ -53,7 +53,7 @@ src_install() {
 	dohtml doc/*
 
 	if use examples; then
-		insinto ${EPREFIX}/usr/share/doc/${PF}/examples
+		insinto /usr/share/doc/${PF}/examples
 		doins examples/*.c
 	fi
 
@@ -64,8 +64,8 @@ src_install() {
 	cd "${S}"-buildw
 	emake installlib DESTDIR="${D}" LIBRARY=libexpatw.la
 
-  elog "${D}${EPREFIX}"/usr/lib*/libexpat{,u,w}.la
-	use static-libs || rm -f "${D}${EPREFIX}"/usr/lib*/libexpat{,u,w}.la
+  elog "${ED}"/usr/lib*/libexpat{,u,w}.la
+	use static-libs || rm -f "${ED}"/usr/lib*/libexpat{,u,w}.la
 
 	# libgeom in /lib and ifconfig in /sbin require it on FreeBSD since we
 	# stripped the libbsdxml copy starting from freebsd-lib-8.2-r1
