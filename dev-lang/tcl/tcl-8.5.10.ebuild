@@ -153,7 +153,7 @@ src_install() {
 	cd "${S}"
 	dodoc ChangeLog* README changes || die
 	
-	dodir /etc/env.d
+	mkdir -p ${D}etc/env.d
     echo "TCL_LIBRARY=${EPREFIX}/usr/$(get_libdir)/tcl${PV%.*}" >>"${D}etc/env.d/00tcl"
 }
 
