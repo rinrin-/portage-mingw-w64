@@ -1,0 +1,11 @@
+--- openssl-1.0.0g.old/Makefile.org	2010-01-28 00:06:58.000000000 +0800
++++ openssl-1.0.0g/Makefile.org	2012-03-08 18:21:23.064859200 +0800
+@@ -597,7 +597,7 @@
+ 	@pod2man="`cd ./util; ./pod2mantest $(PERL)`"; \
+ 	here="`pwd`"; \
+ 	filecase=; \
+-	if [ "$(PLATFORM)" = "DJGPP" -o "$(PLATFORM)" = "Cygwin" -o "$(PLATFORM)" = "mingw" ]; then \
++	if [ "$(PLATFORM)" = "DJGPP" -o "$(PLATFORM)" = "Cygwin" -o "$(PLATFORM)" = "mingw" -o "$(PLATFORM)" = "mingw64" ]; then \
+ 		filecase=-i; \
+ 	fi; \
+ 	set -e; for i in doc/apps/*.pod; do \

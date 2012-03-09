@@ -1,8 +1,10 @@
 app-arch
+app-misc
 dev-db
 dev-util
 dev-lang
 dev-libs
+sys-apps
 sys-devel
 sys-libs
 media-libs
