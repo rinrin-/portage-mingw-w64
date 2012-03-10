@@ -12,7 +12,8 @@ KEYWORDS="~amd64"
 IUSE=""
 
 DEPEND="!sys-libs/glibc
-	!sys-apps/man-pages"
+	!sys-apps/man-pages
+	!dev-libs/libiconv"
 RDEPEND="${DEPEND}"
 
 src_unpack() {
