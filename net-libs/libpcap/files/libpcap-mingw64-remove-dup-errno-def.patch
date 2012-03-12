@@ -1,0 +1,29 @@
+diff -Nur libpcap.old/pcap-win32.c libpcap/pcap-win32.c
+--- libpcap.old/pcap-win32.c	2010-09-20 18:55:41.000000000 +0800
++++ libpcap/pcap-win32.c	2012-03-12 16:56:53.575201400 +0800
+@@ -43,10 +43,6 @@
+ #include <dagnew.h>
+ #include <dagapi.h>
+ #endif /* HAVE_DAG_API */
+-#ifdef __MINGW32__
+-int* _errno();
+-#define errno (*_errno())
+-#endif /* __MINGW32__ */
+ 
+ #ifdef HAVE_REMOTE
+ #include <pcap-remote.h>
+diff -Nur libpcap.old/Win32/Src/inet_pton.c libpcap/Win32/Src/inet_pton.c
+--- libpcap.old/Win32/Src/inet_pton.c	2009-10-07 01:20:04.000000000 +0800
++++ libpcap/Win32/Src/inet_pton.c	2012-03-12 16:56:32.990765500 +0800
+@@ -51,11 +51,6 @@
+ #endif
+ #endif
+ 
+-#ifdef __MINGW32__
+-int* _errno();
+-#define errno (*_errno())
+-#endif /* __MINGW32__ */
+-
+ #include <pcap-stdinc.h>
+ 
+ int inet_aton(const char *cp, struct in_addr *addr);
