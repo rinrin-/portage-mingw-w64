@@ -1,0 +1,145 @@
+--- libdnet-1.12.old/configure.in	2007-01-20 19:39:21.000000000 +0800
++++ libdnet-1.12/configure.in	2012-03-12 21:48:47.214346100 +0800
+@@ -8,6 +8,7 @@
+ AC_INIT(include/dnet.h)
+ AC_CONFIG_AUX_DIR(config)
+ AC_SUBST(ac_aux_dir)
++AC_CONFIG_MACRO_DIR([m4])
+ 
+ AM_INIT_AUTOMAKE(libdnet, 1.12)
+ AM_CONFIG_HEADER(include/config.h)
+@@ -22,6 +23,7 @@
+ dnl XXX - spoof AC_CYGWIN
+ case "$host_os" in
+   *cygwin*) CYGWIN=yes;;
++   *mingw*) CYGWIN=yes;;
+          *) CYGWIN=no;;
+ esac
+ 
+@@ -77,27 +79,24 @@
+ fi
+ dnl XXX - we need MingW32 under Cygwin for win32
+ if test "$CYGWIN" = yes ; then
+-	if test -d /usr/include/mingw ; then
+-		CPPFLAGS="$CPPFLAGS -mno-cygwin"
+-		CFLAGS="$CFLAGS -mno-cygwin"
++		CPPFLAGS="$CPPFLAGS"
++		CFLAGS="$CFLAGS"
++		LDFLAGS="$LDLAGS"
+ 		AC_DEFINE(WIN32_LEAN_AND_MEAN, 1, 
+ 		    [Define for faster code generation.])
+ 		AC_CHECK_LIB(ws2_32, main)
+ 		AC_CHECK_LIB(iphlpapi, main)
+ 		AC_DEFINE(snprintf, _snprintf, 
+ 		    [Use MingW32's internal snprintf])
+-	else
+-		AC_MSG_ERROR([need MingW32 package to build under Cygwin])
+-	fi
+ 	AC_MSG_CHECKING(for WinPcap developer's pack)
+ 	AC_ARG_WITH(wpdpack,
+ 	[  --with-wpdpack=DIR      use WinPcap developer's pack in DIR],
+ 	[ AC_MSG_RESULT($withval)
+-	  if test -f $withval/include/packet32.h -a -f $withval/lib/packet.lib; then
++	  if test -f $withval/include/Packet32.h -a -f $withval/lib64/libpacket.dll.a; then
+ 	     owd=`pwd`
+ 	     if cd $withval; then withval=`pwd`; cd $owd; fi
+ 	     CFLAGS="$CFLAGS -I$withval/include"
+-	     LIBS="$LIBS -L$withval/lib -lpacket"
++	     LIBS="$LIBS -L$withval/lib64 -lpacket"
+ 	  else
+ 	     AC_MSG_ERROR(packet32.h or packet.lib not found in $withval)
+ 	  fi ],
+@@ -161,7 +160,7 @@
+ dnl Checks for header files.
+ AC_HEADER_STDC
+ if test "$CYGWIN" = yes ; then
+-	AC_CHECK_HEADERS(Iphlpapi.h winsock2.h)
++	AC_CHECK_HEADERS(iphlpapi.h winsock2.h)
+ else
+ 	AC_CHECK_HEADERS(fcntl.h unistd.h)
+ 	AC_CHECK_HEADERS(sys/bufmod.h sys/dlpi.h sys/dlpihdr.h sys/dlpi_ext.h \
+@@ -214,7 +213,7 @@
+ fi
+ 
+ dnl Check for arp interface.
+-if test "$ac_cv_header_Iphlpapi_h" = yes ; then
++if test "$ac_cv_header_iphlpapi_h" = yes ; then
+ 	AC_LIBOBJ([arp-win32])
+ elif test "$ac_cv_dnet_ioctl_arp" = yes ; then
+ 	AC_LIBOBJ([arp-ioctl])
+@@ -225,7 +224,7 @@
+ fi
+ 
+ dnl Check for Ethernet interface.
+-if test "$ac_cv_header_Iphlpapi_h" = yes ; then
++if test "$ac_cv_header_iphlpapi_h" = yes ; then
+ 	AC_LIBOBJ([eth-win32])
+ elif test "$ac_cv_header_net_pfilt_h" = yes ; then
+ 	AC_LIBOBJ([eth-pfilt])
+@@ -245,7 +244,7 @@
+ fi
+ 
+ dnl Check for firewall interface.
+-if test "$ac_cv_header_Iphlpapi_h" = yes ; then
++if test "$ac_cv_header_iphlpapi_h" = yes ; then
+         AC_LIBOBJ([fw-pktfilter])
+ elif test "$ac_cv_header_net_pfvar_h" = yes ; then
+ 	AC_LIBOBJ([fw-pf])
+@@ -270,14 +269,14 @@
+ fi
+ 
+ dnl Check for network interface interface.
+-if test "$ac_cv_header_Iphlpapi_h" = yes ; then
++if test "$ac_cv_header_iphlpapi_h" = yes ; then
+ 	AC_LIBOBJ([intf-win32])
+ else
+ 	AC_LIBOBJ([intf])
+ fi
+ 
+ dnl Check for raw IP interface.
+-if test "$ac_cv_header_Iphlpapi_h" = yes ; then
++if test "$ac_cv_header_iphlpapi_h" = yes ; then
+ 	AC_LIBOBJ([ip-win32])
+ elif test "$ac_cv_dnet_rawip_cooked" = yes ; then
+ 	AC_LIBOBJ([ip-cooked])
+@@ -286,7 +285,7 @@
+ fi
+ 
+ dnl Check for routing interface.
+-if test "$ac_cv_header_Iphlpapi_h" = yes ; then
++if test "$ac_cv_header_iphlpapi_h" = yes ; then
+ 	AC_LIBOBJ([route-win32])
+ elif test "$ac_cv_dnet_route_h_has_rt_msghdr" = yes ; then
+ 	AC_LIBOBJ([route-bsd])
+--- libdnet-1.12.old/include/dnet/os.h	2005-02-15 13:31:00.000000000 +0800
++++ libdnet-1.12/include/dnet/os.h	2012-03-12 21:47:49.666054500 +0800
+@@ -22,9 +22,6 @@
+   typedef u_char	uint8_t;
+   typedef u_short	uint16_t;
+   typedef u_int		uint32_t;
+-# ifndef __CYGWIN__
+-  typedef long		ssize_t;
+-# endif
+ #else
+ # include <sys/param.h>
+ # include <sys/types.h>
+--- libdnet-1.12.old/src/Makefile.am	2006-01-19 14:11:01.000000000 +0800
++++ libdnet-1.12/src/Makefile.am	2012-03-12 21:57:59.392845000 +0800
+@@ -8,4 +8,4 @@
+ 
+ libdnet_la_LIBADD = @LTLIBOBJS@
+ 
+-libdnet_la_LDFLAGS = -version-info 1:1:0
++libdnet_la_LDFLAGS = -no-undefined -version-info 1:1:0
+--- libdnet-1.12.old/src/rand.c	2005-02-15 14:37:07.000000000 +0800
++++ libdnet-1.12/src/rand.c	2012-03-12 21:47:49.669054700 +0800
+@@ -13,8 +13,7 @@
+ 
+ #ifdef _WIN32
+ /* XXX */
+-# undef _WIN32_WINNT
+-# define _WIN32_WINNT 0x0400
++# include <windows.h>
+ # include <wincrypt.h>
+ # define inline __inline
+ #else
