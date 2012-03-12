@@ -1,0 +1,129 @@
+--- gettext-0.18.1.1.old/gettext-tools/tests/msgfmt-10	2010-06-06 20:49:58.000000000 +0800
++++ gettext-0.18.1.1/gettext-tools/tests/msgfmt-10	2012-03-11 13:12:55.760002300 +0800
+@@ -38,7 +38,7 @@
+ EOF
+ 
+ : ${MSGFMT=msgfmt}
+-${MSGFMT} --check -o /dev/null mf-test10.po1
++${MSGFMT} --check -o NUL mf-test10.po1
+ test $? = 0 || { rm -fr $tmpfiles; exit 1; }
+ 
+ tmpfiles="$tmpfiles mf-test10.po2"
+@@ -69,7 +69,7 @@
+ tmpfiles="$tmpfiles mf-test10.err"
+ : ${MSGFMT=msgfmt}
+ LC_MESSAGES=C LC_ALL= \
+-${MSGFMT} --check -o /dev/null mf-test10.po2 \
++${MSGFMT} --check -o NUL mf-test10.po2 \
+     2>&1 | grep -v '^==' | sed -e 's|[^ ]*\\msgfmt\.exe|msgfmt|' -e 's|^msgfmt\.exe|msgfmt|' | LC_ALL=C tr -d '\r' > mf-test10.err
+ 
+ tmpfiles="$tmpfiles mf-test10.ok"
+--- gettext-0.18.1.1.old/gettext-tools/tests/msgfmt-15	2010-06-06 20:49:58.000000000 +0800
++++ gettext-0.18.1.1/gettext-tools/tests/msgfmt-15	2012-03-11 13:14:01.485317600 +0800
+@@ -39,7 +39,7 @@
+ EOF
+ 
+ : ${MSGFMT=msgfmt}
+-${MSGFMT} --check -o /dev/null mf-15.po1
++${MSGFMT} --check -o NUL mf-15.po1
+ test $? = 0 || { rm -fr $tmpfiles; exit 1; }
+ 
+ tmpfiles="$tmpfiles mf-15.po2"
+@@ -69,7 +69,7 @@
+ EOF
+ 
+ : ${MSGFMT=msgfmt}
+-${MSGFMT} --check -o /dev/null mf-15.po2 2>/dev/null
++${MSGFMT} --check -o NUL mf-15.po2 2>NUL
+ test $? = 1 || { rm -fr $tmpfiles; exit 1; }
+ 
+ tmpfiles="$tmpfiles mf-15.po3"
+@@ -99,7 +99,7 @@
+ EOF
+ 
+ : ${MSGFMT=msgfmt}
+-${MSGFMT} --check -o /dev/null mf-15.po3
++${MSGFMT} --check -o NUL mf-15.po3
+ test $? = 0 || { rm -fr $tmpfiles; exit 1; }
+ 
+ tmpfiles="$tmpfiles mf-15.po4"
+@@ -129,7 +129,7 @@
+ EOF
+ 
+ : ${MSGFMT=msgfmt}
+-${MSGFMT} --check -o /dev/null mf-15.po4 2>/dev/null
++${MSGFMT} --check -o NUL mf-15.po4 2>NUL
+ test $? = 1 || { rm -fr $tmpfiles; exit 1; }
+ 
+ rm -fr $tmpfiles
+--- gettext-0.18.1.1.old/gettext-tools/tests/msgfmt-17	2010-06-06 20:49:58.000000000 +0800
++++ gettext-0.18.1.1/gettext-tools/tests/msgfmt-17	2012-03-11 22:09:19.684884400 +0800
+@@ -38,7 +38,7 @@
+ EOF
+ 
+ : ${MSGFMT=msgfmt}
+-${MSGFMT} --check -o /dev/null mf-15.po1 2>/dev/null
++${MSGFMT} --check -o NUL mf-15.po1 2>NUL
+ test $? = 1 || { rm -fr $tmpfiles; exit 1; }
+ 
+ tmpfiles="$tmpfiles mf-15.po2"
+@@ -68,7 +68,7 @@
+ EOF
+ 
+ : ${MSGFMT=msgfmt}
+-${MSGFMT} --check -o /dev/null mf-15.po2
++${MSGFMT} --check -o NUL mf-15.po2
+ test $? = 0 || { rm -fr $tmpfiles; exit 1; }
+ 
+ tmpfiles="$tmpfiles mf-15.po3"
+@@ -98,7 +98,7 @@
+ EOF
+ 
+ : ${MSGFMT=msgfmt}
+-${MSGFMT} --check -o /dev/null mf-15.po3 2>/dev/null
++${MSGFMT} --check -o NUL mf-15.po3 2>NUL
+ test $? = 1 || { rm -fr $tmpfiles; exit 1; }
+ 
+ tmpfiles="$tmpfiles mf-15.po4"
+@@ -128,7 +128,7 @@
+ EOF
+ 
+ : ${MSGFMT=msgfmt}
+-${MSGFMT} --check -o /dev/null mf-15.po4 2>/dev/null
++${MSGFMT} --check -o NUL mf-15.po4 2>NUL
+ test $? = 1 || { rm -fr $tmpfiles; exit 1; }
+ 
+ rm -fr $tmpfiles
+--- gettext-0.18.1.1.old/gettext-tools/tests/msgfmt-4	2010-06-06 20:49:58.000000000 +0800
++++ gettext-0.18.1.1/gettext-tools/tests/msgfmt-4	2012-03-11 22:08:06.766713700 +0800
+@@ -36,7 +36,7 @@
+ EOF
+ 
+ : ${MSGFMT=msgfmt}
+-${MSGFMT} -o /dev/null mf-test4.po 2> /dev/null
++${MSGFMT} -o NUL mf-test4.po 2> NUL
+ result=$?
+ 
+ rm -fr $tmpfiles
+--- gettext-0.18.1.1.old/gettext-tools/tests/msgmerge-compendium-4	2010-06-06 20:49:58.000000000 +0800
++++ gettext-0.18.1.1/gettext-tools/tests/msgmerge-compendium-4	2012-03-11 22:09:52.291749400 +0800
+@@ -31,7 +31,7 @@
+ 
+ tmpfiles="$tmpfiles mm-c-4.tmp mm-c-4.out"
+ : ${MSGMERGE=msgmerge}
+-${MSGMERGE} -q --compendium mm-c-4.com -o mm-c-4.tmp /dev/null mm-c-4.pot
++${MSGMERGE} -q --compendium mm-c-4.com -o mm-c-4.tmp NUL mm-c-4.pot
+ test $? = 0 || { rm -fr $tmpfiles; exit 1; }
+ LC_ALL=C tr -d '\r' < mm-c-4.tmp > mm-c-4.out
+ test $? = 0 || { rm -fr $tmpfiles; exit 1; }
+--- gettext-0.18.1.1.old/gettext-tools/tests/msgmerge-compendium-5	2010-06-06 20:49:58.000000000 +0800
++++ gettext-0.18.1.1/gettext-tools/tests/msgmerge-compendium-5	2012-03-11 22:10:14.477022900 +0800
+@@ -9,7 +9,7 @@
+ : ${MSGMERGE=msgmerge}
+ ${MSGMERGE} -q -o mm-c-5.tmp \
+   --compendium ${top_srcdir}/tests/mm-viet.comp.po \
+-  /dev/null ${top_srcdir}/tests/mm-viet.pot
++  NUL ${top_srcdir}/tests/mm-viet.pot
+ test $? = 0 || { rm -fr $tmpfiles; exit 1; }
+ LC_ALL=C tr -d '\r' < mm-c-5.tmp > mm-c-5.out
+ test $? = 0 || { rm -fr $tmpfiles; exit 1; }

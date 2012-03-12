@@ -14,3 +14,4 @@ dev-lang/tk		threads
 sys-libs/db		cxx tcl
 dev-db/sqlite		secure-delete soundex unlock-notify
 dev-libs/openssl	gmp rfc3779 sse2 static-libs zlib 
+sys-devel/gettext	static-libs nls
