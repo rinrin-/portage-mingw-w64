@@ -16,3 +16,5 @@ dev-db/sqlite		secure-delete soundex unlock-notify
 dev-libs/openssl	gmp rfc3779 sse2 static-libs zlib 
 sys-devel/gettext	static-libs nls
 dev-libs/boehm-gc	cxx threads
+dev-libs/popt		nls
+dev-vcs/subversion	nls webdav-serf

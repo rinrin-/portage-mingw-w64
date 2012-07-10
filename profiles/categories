@@ -4,6 +4,8 @@ dev-db
 dev-util
 dev-lang
 dev-libs
+dev-util
+dev-vcs
 sys-apps
 sys-devel
 sys-libs
