@@ -44,6 +44,9 @@ echoit() { echo "$@"; "$@"; }
 src_compile() {
 	case ${CHOST} in
 	*-mingw*|mingw*)
+	  sed -i -e 's|LIBRARY|LIBRARY zlib1|g' win32/zlib.def || die
+	  sed -i -e 's|-o $@ win32/zlib.def $(OBJS) $(OBJA) zlibrc.o|-o $@ $(OBJS) $(OBJA) zlibrc.o|g' \
+		  win32/Makefile.gcc || die
 		emake -f win32/Makefile.gcc STRIP=true PREFIX=${CHOST}- || die
 		sed \
 			-e 's|@prefix@|"${EPREFIX}"/usr|g' \
