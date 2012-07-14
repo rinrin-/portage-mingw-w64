@@ -1,0 +1,131 @@
+diff -BurN eselect-1.3.1.old/bin/eselect.in eselect-1.3.1/bin/eselect.in
+--- eselect-1.3.1.old/bin/eselect.in	2012-02-13 00:45:39.000000000 +0800
++++ eselect-1.3.1/bin/eselect.in	2012-07-14 20:47:29.003363300 +0800
+@@ -43,8 +43,9 @@
+ 
+ # Support variables for Gentoo Prefix
+ EPREFIX="@EPREFIX@"
+-EROOT="${ROOT}${EPREFIX}"
++EROOT="${ROOT}"
+ 
++PACKAGE_MANAGER="pkgcore"
+ # Remove all alias definitions. Unset functions and variables that are
+ # known to cause trouble.
+ "unalias" -a
+diff -BurN eselect-1.3.1.old/libs/editor-variable.bash.in eselect-1.3.1/libs/editor-variable.bash.in
+--- eselect-1.3.1.old/libs/editor-variable.bash.in	2012-02-13 00:45:38.000000000 +0800
++++ eselect-1.3.1/libs/editor-variable.bash.in	2012-07-14 20:50:44.106705800 +0800
+@@ -34,13 +34,13 @@
+ 	local cur i
+ 
+ 	for i in ${EDITOR_LIST}; do
+-		[[ -f ${EROOT}${i#*:} ]] && echo "${EPREFIX}${i%%:*}"
++		[[ -f ${EROOT}${i#*:} ]] && echo "${i%%:*}"
+ 	done
+ 
+ 	# also output the current value if it isn't in our list
+ 	cur=$(read_env_value)
+ 	[[ -n ${cur} && ${EDITOR_LIST} != *:* && -f ${ROOT}${cur} ]] \
+-		&& ! has "${cur#${EPREFIX}}" ${EDITOR_LIST} \
++		&& ! has "${cur}" ${EDITOR_LIST} \
+ 		&& echo "${cur}"
+ }
+ 
+@@ -135,7 +135,7 @@
+ 			IFS=:
+ 			for dir in ${EDITOR_PATH-/bin:/usr/bin}; do
+ 				[[ -f ${EROOT}${dir}/${target} ]] || continue
+-				target=${EPREFIX}${dir}/${target}
++				target=${EROOT}${dir}/${target}
+ 				break
+ 			done
+ 			IFS=${ifs_save}
+diff -BurN eselect-1.3.1.old/libs/skel.bash.in eselect-1.3.1/libs/skel.bash.in
+--- eselect-1.3.1.old/libs/skel.bash.in	2012-02-13 00:45:38.000000000 +0800
++++ eselect-1.3.1/libs/skel.bash.in	2012-07-14 20:48:52.607310200 +0800
+@@ -291,8 +291,8 @@
+ 		|| die -q "Please specify 1 library directory, 1 file to install and 1 implementation!"
+ 
+ 	# If $D is set, we're adding from portage so we want to respect sandbox.
+-	# Otherwise, respect the ROOT variable.
+-	local prefix=${D:-${ROOT}}${EPREFIX}
++	# Otherwise, respect the EROOT variable.
++	local prefix=${D:-${EROOT}}
+ 
+ 	# Create directory if necessary
+ 	if [[ ! -e ${prefix}/etc/env.d/${IFACE}/${1} ]]; then
+diff -BurN eselect-1.3.1.old/modules/binutils.eselect eselect-1.3.1/modules/binutils.eselect
+--- eselect-1.3.1.old/modules/binutils.eselect	2012-02-13 00:45:39.000000000 +0800
++++ eselect-1.3.1/modules/binutils.eselect	2012-07-14 20:53:55.401441600 +0800
+@@ -73,7 +73,7 @@
+ 		&& die -q "Profile \"${profile}\" is already active!"
+ 	chost=$(envvar sys-devel/binutils CHOST)
+ 	libpath=$(load_config ${profile_file} LIBPATH)
+-	libpath=${libpath:-${EPREFIX}/usr/lib/binutils/${TARGET}/${VER}}
++	libpath=${libpath:-/usr/lib/binutils/${TARGET}/${VER}}
+ 	faketargets=( $(load_config ${profile_file} FAKE_TARGETS) )
+ 
+ 	# Generate binary symlinks
+@@ -83,7 +83,7 @@
+ 	mkdir -p "${EROOT}/usr/${target}/bin" \
+ 		|| die -q "Can't create ${EROOT}/usr/${target}/bin!"
+ 
+-	binutilspath=${EPREFIX}/usr/${target}/binutils-bin/${version}
++	binutilspath=/usr/${target}/binutils-bin/${version}
+ 	for app in "${ROOT}${binutilspath}"/* ; do
+ 		app=${app##*/}
+ 		ln -sf \
+@@ -129,12 +129,12 @@
+ 
+ 	# Update the environment
+ 	if [[ ${target} == ${chost} ]] ; then
+-		datapath=${EPREFIX}/usr/share/binutils-date/${target}/${version}
++		datapath=/usr/share/binutils-date/${target}/${version}
+ 		[[ -d ${datapath}/man ]] \
+ 			&& store_config ${BINUTILS_ENVFILE} MANPATH "${datapath}/man"
+ 		[[ -d ${datapath}/info ]] \
+ 			&& store_config ${BINUTILS_ENVFILE} INFOPATH "${datapath}/info"
+-		store_config ${BINUTILS_ENVFILE} LDPATH "${EPREFIX}/usr/${target}/lib"
++		store_config ${BINUTILS_ENVFILE} LDPATH "/usr/${target}/lib"
+ 	fi
+ 
+ 	store_config \
+diff -BurN eselect-1.3.1.old/modules/env.eselect eselect-1.3.1/modules/env.eselect
+--- eselect-1.3.1.old/modules/env.eselect	2012-02-13 00:45:39.000000000 +0800
++++ eselect-1.3.1/modules/env.eselect	2012-07-14 20:52:13.067262500 +0800
+@@ -191,11 +191,11 @@
+ 	str="${str}# Make all changes to /etc/env.d files\n"
+ 	# Add default items
+ 	for x in /bin /sbin /usr/bin /usr/sbin; do
+-		str="${str}-l ${EPREFIX}${x}\n"
++		str="${str}-l ${x}\n"
+ 	done
+ 	for x in $(list_libdirs); do
+-		[[ -e ${EROOT}/${x} ]] && str="${str}-l ${EPREFIX}/${x}\n"
+-		[[ -e ${EROOT}/usr/${x} ]] && str="${str}-l ${EPREFIX}/usr/${x}\n"
++		[[ -e ${EROOT}/${x} ]] && str="${str}-l /${x}\n"
++		[[ -e ${EROOT}/usr/${x} ]] && str="${str}-l /usr/${x}\n"
+ 	done
+ 	path=$(load_config "${ENVPROFILE}" PATH)
+ 	prelink_path=$(load_config "${ENVPROFILE}" PRELINK_PATH)
+diff -BurN eselect-1.3.1.old/modules/rc.eselect eselect-1.3.1/modules/rc.eselect
+--- eselect-1.3.1.old/modules/rc.eselect	2012-02-13 00:45:38.000000000 +0800
++++ eselect-1.3.1/modules/rc.eselect	2012-07-14 20:53:00.411345000 +0800
+@@ -14,7 +14,7 @@
+ # API for OpenRC or baselayout-1
+ source_rc_functions() {
+ 	[[ ${RC_GOT_FUNCTIONS} = yes ]] && return
+-	source "${EPREFIX}/etc/init.d/functions.sh" \
++	source "/etc/init.d/functions.sh" \
+ 		|| die "Failed to source functions.sh"
+ 	# baselayout-1 compatibility
+ 	if [[ -e ${svclib}/sh/rc-services.sh ]]; then
+@@ -147,7 +147,7 @@
+ 				write_kv_list_entry ${runlevel} "[skipped]"
+ 			else
+ 				ln -sf \
+-					"${EPREFIX}/etc/init.d/${script}" \
++					"${EROOT}/etc/init.d/${script}" \
+ 					"${EROOT}/etc/runlevels/${runlevel}/${script}" \
+ 					&& write_kv_list_entry ${runlevel} "[done]" \
+ 					|| write_kv_list_entry ${runlevel} "[failed]"

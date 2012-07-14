@@ -1,4 +1,5 @@
 app-arch
+app-admin
 app-misc
 dev-db
 dev-util
@@ -9,6 +10,7 @@ dev-vcs
 sys-apps
 sys-devel
 sys-libs
+media-fonts
 media-libs
 net-libs
 virtual
