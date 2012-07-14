@@ -1,6 +1,6 @@
-# Copyright 1999-2011 Gentoo Foundation
+# Copyright 1999-2012 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/eclass/eutils.eclass,v 1.377 2012/01/03 08:45:36 jlec Exp $
+# $Header: /var/cvsroot/gentoo-x86/eclass/eutils.eclass,v 1.400 2012/06/20 09:26:50 mgorny Exp $
 
 # @ECLASS: eutils.eclass
 # @MAINTAINER:
@@ -18,7 +18,7 @@
 if [[ ${___ECLASS_ONCE_EUTILS} != "recur -_+^+_- spank" ]] ; then
 ___ECLASS_ONCE_EUTILS="recur -_+^+_- spank"
 
-inherit multilib portability user
+inherit multilib toolchain-funcs user
 
 DESCRIPTION="Based on the ${ECLASS} eclass"
 
@@ -214,6 +214,7 @@ eumask_push() {
 # @DESCRIPTION:
 # Restore the previous umask state.
 eumask_pop() {
+	[[ $# -eq 0 ]] || die "${FUNCNAME}: we take no options"
 	local s
 	estack_pop eumask s || die "${FUNCNAME}: unbalanced push"
 	umask ${s} || die "${FUNCNAME}: sanity: could not restore umask: ${s}"
@@ -229,13 +230,21 @@ EPATCH_SOURCE="${WORKDIR}/patch"
 EPATCH_SUFFIX="patch.bz2"
 # @VARIABLE: EPATCH_OPTS
 # @DESCRIPTION:
-# Default options for patch:
+# Options to pass to patch.  Meant for ebuild/package-specific tweaking
+# such as forcing the patch level (-p#) or fuzz (-F#) factor.  Note that
+# for single patch tweaking, you can also pass flags directly to epatch.
+EPATCH_OPTS=""
+# @VARIABLE: EPATCH_COMMON_OPTS
+# @DESCRIPTION:
+# Common options to pass to `patch`.  You probably should never need to
+# change these.  If you do, please discuss it with base-system first to
+# be sure.
 # @CODE
 #	-g0 - keep RCS, ClearCase, Perforce and SCCS happy #24571
 #	--no-backup-if-mismatch - do not leave .orig files behind
 #	-E - automatically remove empty files
 # @CODE
-EPATCH_OPTS="-g0 -E --no-backup-if-mismatch"
+EPATCH_COMMON_OPTS="-g0 -E --no-backup-if-mismatch"
 # @VARIABLE: EPATCH_EXCLUDE
 # @DESCRIPTION:
 # List of patches not to apply.	 Note this is only file names,
@@ -256,7 +265,7 @@ EPATCH_MULTI_MSG="Applying various patches (bugfixes/updates) ..."
 EPATCH_FORCE="no"
 
 # @FUNCTION: epatch
-# @USAGE: [patches] [dirs of patches]
+# @USAGE: [options] [patches] [dirs of patches]
 # @DESCRIPTION:
 # epatch is designed to greatly simplify the application of patches.  It can
 # process patch files directly, or directories of patches.  The patches may be
@@ -264,8 +273,12 @@ EPATCH_FORCE="no"
 # the -p option as epatch will automatically attempt -p0 to -p5 until things
 # apply successfully.
 #
-# If you do not specify any options, then epatch will default to the directory
-# specified by EPATCH_SOURCE.
+# If you do not specify any patches/dirs, then epatch will default to the
+# directory specified by EPATCH_SOURCE.
+#
+# Any options specified that start with a dash will be passed down to patch
+# for this specific invocation.  As soon as an arg w/out a dash is found, then
+# arg processing stops.
 #
 # When processing directories, epatch will apply all patches that match:
 # @CODE
@@ -292,6 +305,18 @@ epatch() {
 	}
 
 	unset P4CONFIG P4PORT P4USER # keep perforce at bay #56402
+
+	# First process options.  We localize the EPATCH_OPTS setting
+	# from above so that we can pass it on in the loop below with
+	# any additional values the user has specified.
+	local EPATCH_OPTS=( ${EPATCH_OPTS[*]} )
+	while [[ $# -gt 0 ]] ; do
+		case $1 in
+		-*) EPATCH_OPTS+=( "$1" ) ;;
+		*) break ;;
+		esac
+		shift
+	done
 
 	# Let the rest of the code process one user arg at a time --
 	# each arg may expand into multiple patches, and each arg may
@@ -335,6 +360,10 @@ epatch() {
 		echo
 		die "Cannot find \$EPATCH_SOURCE!"
 	fi
+
+	# Now that we know we're actually going to apply something, merge
+	# all of the patch options back in to a single variable for below.
+	EPATCH_OPTS="${EPATCH_COMMON_OPTS} ${EPATCH_OPTS[*]}"
 
 	local PIPE_CMD
 	case ${EPATCH_SUFFIX##*\.} in
@@ -441,15 +470,18 @@ epatch() {
 		fi
 
 		# Dynamically detect the correct -p# ... i'm lazy, so shoot me :/
+		local patch_cmd
 		while [[ ${count} -lt 5 ]] ; do
+			patch_cmd="${BASH_ALIASES[patch]:-patch} -p${count} ${EPATCH_OPTS}"
+
 			# Generate some useful debug info ...
 			(
 			_epatch_draw_line "***** ${patchname} *****"
 			echo
-			echo "PATCH COMMAND:  patch -p${count} ${EPATCH_OPTS} < '${PATCH_TARGET}'"
+			echo "PATCH COMMAND:  ${patch_cmd} < '${PATCH_TARGET}'"
 			echo
 			_epatch_draw_line "***** ${patchname} *****"
-			patch -p${count} ${EPATCH_OPTS} --dry-run -f < "${PATCH_TARGET}" 2>&1
+			${patch_cmd} --dry-run -f < "${PATCH_TARGET}" 2>&1
 			ret=$?
 			echo
 			echo "patch program exited with status ${ret}"
@@ -463,7 +495,7 @@ epatch() {
 				echo "ACTUALLY APPLYING ${patchname} ..."
 				echo
 				_epatch_draw_line "***** ${patchname} *****"
-				patch -p${count} ${EPATCH_OPTS} < "${PATCH_TARGET}" 2>&1
+				${patch_cmd} < "${PATCH_TARGET}" 2>&1
 				ret=$?
 				echo
 				echo "patch program exited with status ${ret}"
@@ -500,8 +532,16 @@ epatch() {
 			die "Failed Patch: ${patchname}!"
 		fi
 
-		# if everything worked, delete the patch log
+		# if everything worked, delete the full debug patch log
 		rm -f "${STDERR_TARGET}"
+
+		# then log away the exact stuff for people to review later
+		cat <<-EOF >> "${T}/epatch.log"
+		PATCH: ${x}
+		CMD: ${patch_cmd}
+		PWD: ${PWD}
+
+		EOF
 		eend 0
 	done
 
@@ -515,7 +555,8 @@ epatch() {
 # Applies user-provided patches to the source tree. The patches are
 # taken from /etc/portage/patches/<CATEGORY>/<PF|P|PN>/, where the first
 # of these three directories to exist will be the one to use, ignoring
-# any more general directories which might exist as well.
+# any more general directories which might exist as well. They must end
+# in ".patch" to be applied.
 #
 # User patches are intended for quick testing of patches without ebuild
 # modifications, as well as for permanent customizations a user might
@@ -539,12 +580,12 @@ epatch_user() {
 	[[ $# -ne 0 ]] && die "epatch_user takes no options"
 
 	# Allow multiple calls to this function; ignore all but the first
-	local applied="${T}/epatch_user.applied"
+	local applied="${T}/epatch_user.log"
 	[[ -e ${applied} ]] && return 2
 
 	# don't clobber any EPATCH vars that the parent might want
 	local EPATCH_SOURCE check base=${PORTAGE_CONFIGROOT%/}/etc/portage/patches
-	for check in {${CATEGORY}/${PF},${CATEGORY}/${P},${CATEGORY}/${PN}}; do
+	for check in ${CATEGORY}/{${P}-${PR},${P},${PN}}; do
 		EPATCH_SOURCE=${base}/${CTARGET}/${check}
 		[[ -r ${EPATCH_SOURCE} ]] || EPATCH_SOURCE=${base}/${CHOST}/${check}
 		[[ -r ${EPATCH_SOURCE} ]] || EPATCH_SOURCE=${base}/${check}
@@ -641,22 +682,22 @@ make_desktop_entry() {
 		case ${catmaj} in
 			app)
 				case ${catmin} in
-					accessibility) type=Accessibility;;
+					accessibility) type="Utility;Accessibility";;
 					admin)         type=System;;
 					antivirus)     type=System;;
-					arch)          type=Archiving;;
-					backup)        type=Archiving;;
-					cdr)           type=DiscBurning;;
-					dicts)         type=Dictionary;;
+					arch)          type="Utility;Archiving";;
+					backup)        type="Utility;Archiving";;
+					cdr)           type="AudioVideo;DiscBurning";;
+					dicts)         type="Office;Dictionary";;
 					doc)           type=Documentation;;
-					editors)       type=TextEditor;;
-					emacs)         type=TextEditor;;
-					emulation)     type=Emulator;;
-					laptop)        type=HardwareSettings;;
+					editors)       type="Utility;TextEditor";;
+					emacs)         type="Development;TextEditor";;
+					emulation)     type="System;Emulator";;
+					laptop)        type="Settings;HardwareSettings";;
 					office)        type=Office;;
-					pda)           type=PDA;;
-					vim)           type=TextEditor;;
-					xemacs)        type=TextEditor;;
+					pda)           type="Office;PDA";;
+					vim)           type="Development;TextEditor";;
+					xemacs)        type="Development;TextEditor";;
 				esac
 				;;
 
@@ -903,471 +944,122 @@ newmenu() {
 	)
 }
 
-# @FUNCTION: doicon
-# @USAGE: <list of icons>
+# @FUNCTION: _iconins
+# @INTERNAL
 # @DESCRIPTION:
-# Install the list of icons into the icon directory (/usr/share/pixmaps).
-# This is useful in conjunction with creating desktop/menu files.
-doicon() {
+# function for use in doicon and newicon
+_iconins() {
 	(
 	# wrap the env here so that the 'insinto' call
 	# doesn't corrupt the env of the caller
-	local i j ret
-	insinto /usr/share/pixmaps
-	for i in "$@" ; do
-		if [[ -f ${i} ]] ; then
-			doins "${i}"
-			((ret+=$?))
-		elif [[ -d ${i} ]] ; then
-			for j in "${i}"/*.png ; do
-				doins "${j}"
-				((ret+=$?))
-			done
-		else
-			((++ret))
-		fi
+	local funcname=$1; shift
+	local size dir
+	local context=apps
+	local theme=hicolor
+
+	while [[ $# -gt 0 ]] ; do
+		case $1 in
+		-s|--size)
+			if [[ ${2%%x*}x${2%%x*} == "$2" ]] ; then
+				size=${2%%x*}
+			else
+				size=${2}
+			fi
+			case ${size} in
+			16|22|24|32|36|48|64|72|96|128|192|256)
+				size=${size}x${size};;
+			scalable)
+				;;
+			*)
+				eerror "${size} is an unsupported icon size!"
+				exit 1;;
+			esac
+			shift 2;;
+		-t|--theme)
+			theme=${2}
+			shift 2;;
+		-c|--context)
+			context=${2}
+			shift 2;;
+		*)
+			if [[ -z ${size} ]] ; then
+				insinto /usr/share/pixmaps
+			else
+				insinto /usr/share/icons/${theme}/${size}/${context}
+			fi
+
+			if [[ ${funcname} == doicon ]] ; then
+				if [[ -f $1 ]] ; then
+					doins "${1}"
+				elif [[ -d $1 ]] ; then
+					shopt -s nullglob
+					doins "${1}"/*.{png,svg}
+					shopt -u nullglob
+				else
+					eerror "${1} is not a valid file/directory!"
+					exit 1
+				fi
+			else
+				break
+			fi
+			shift 1;;
+		esac
 	done
-	exit ${ret}
-	)
+	if [[ ${funcname} == newicon ]] ; then
+		newins "$@"
+	fi
+	) || die
+}
+
+# @FUNCTION: doicon
+# @USAGE: [options] <icons>
+# @DESCRIPTION:
+# Install icon into the icon directory /usr/share/icons or into
+# /usr/share/pixmaps if "--size" is not set.
+# This is useful in conjunction with creating desktop/menu files.
+#
+# @CODE
+#  options:
+#  -s, --size
+#    !!! must specify to install into /usr/share/icons/... !!!
+#    size of the icon, like 48 or 48x48
+#    supported icon sizes are:
+#    16 22 24 32 36 48 64 72 96 128 192 256 scalable
+#  -c, --context
+#    defaults to "apps"
+#  -t, --theme
+#    defaults to "hicolor"
+#
+# icons: list of icons
+#
+# example 1: doicon foobar.png fuqbar.svg suckbar.png
+# results in: insinto /usr/share/pixmaps
+#             doins foobar.png fuqbar.svg suckbar.png
+#
+# example 2: doicon -s 48 foobar.png fuqbar.png blobbar.png
+# results in: insinto /usr/share/icons/hicolor/48x48/apps
+#             doins foobar.png fuqbar.png blobbar.png
+# @CODE
+doicon() {
+	_iconins ${FUNCNAME} "$@"
 }
 
 # @FUNCTION: newicon
-# @USAGE: <icon> <newname>
+# @USAGE: [options] <icon> <newname>
 # @DESCRIPTION:
-# Like all other new* functions, install the specified icon as newname.
+# Like doicon, install the specified icon as newname.
+#
+# @CODE
+# example 1: newicon foobar.png NEWNAME.png
+# results in: insinto /usr/share/pixmaps
+#             newins foobar.png NEWNAME.png
+#
+# example 2: newicon -s 48 foobar.png NEWNAME.png 
+# results in: insinto /usr/share/icons/hicolor/48x48/apps
+#             newins foobar.png NEWNAME.png
+# @CODE
 newicon() {
-	(
-	# wrap the env here so that the 'insinto' call
-	# doesn't corrupt the env of the caller
-	insinto /usr/share/pixmaps
-	newins "$@"
-	)
-}
-
-# for internal use only (unpack_pdv and unpack_makeself)
-find_unpackable_file() {
-	local src=$1
-	if [[ -z ${src} ]] ; then
-		src=${DISTDIR}/${A}
-	else
-		if [[ -e ${DISTDIR}/${src} ]] ; then
-			src=${DISTDIR}/${src}
-		elif [[ -e ${PWD}/${src} ]] ; then
-			src=${PWD}/${src}
-		elif [[ -e ${src} ]] ; then
-			src=${src}
-		fi
-	fi
-	[[ ! -e ${src} ]] && return 1
-	echo "${src}"
-}
-
-# @FUNCTION: unpack_pdv
-# @USAGE: <file to unpack> <size of off_t>
-# @DESCRIPTION:
-# Unpack those pesky pdv generated files ...
-# They're self-unpacking programs with the binary package stuffed in
-# the middle of the archive.  Valve seems to use it a lot ... too bad
-# it seems to like to segfault a lot :(.  So lets take it apart ourselves.
-#
-# You have to specify the off_t size ... I have no idea how to extract that
-# information out of the binary executable myself.  Basically you pass in
-# the size of the off_t type (in bytes) on the machine that built the pdv
-# archive.
-#
-# One way to determine this is by running the following commands:
-#
-# @CODE
-# 	strings <pdv archive> | grep lseek
-# 	strace -elseek <pdv archive>
-# @CODE
-#
-# Basically look for the first lseek command (we do the strings/grep because
-# sometimes the function call is _llseek or something) and steal the 2nd
-# parameter.  Here is an example:
-#
-# @CODE
-# 	vapier@vapier 0 pdv_unpack # strings hldsupdatetool.bin | grep lseek
-# 	lseek
-# 	vapier@vapier 0 pdv_unpack # strace -elseek ./hldsupdatetool.bin
-# 	lseek(3, -4, SEEK_END)					= 2981250
-# @CODE
-#
-# Thus we would pass in the value of '4' as the second parameter.
-unpack_pdv() {
-	local src=$(find_unpackable_file "$1")
-	local sizeoff_t=$2
-
-	[[ -z ${src} ]] && die "Could not locate source for '$1'"
-	[[ -z ${sizeoff_t} ]] && die "No idea what off_t size was used for this pdv :("
-
-	local shrtsrc=$(basename "${src}")
-	echo ">>> Unpacking ${shrtsrc} to ${PWD}"
-	local metaskip=$(tail -c ${sizeoff_t} "${src}" | hexdump -e \"%i\")
-	local tailskip=$(tail -c $((${sizeoff_t}*2)) "${src}" | head -c ${sizeoff_t} | hexdump -e \"%i\")
-
-	# grab metadata for debug reasons
-	local metafile=$(emktemp)
-	tail -c +$((${metaskip}+1)) "${src}" > "${metafile}"
-
-	# rip out the final file name from the metadata
-	local datafile=$(tail -c +$((${metaskip}+1)) "${src}" | strings | head -n 1)
-	datafile=$(basename "${datafile}")
-
-	# now lets uncompress/untar the file if need be
-	local tmpfile=$(emktemp)
-	tail -c +$((${tailskip}+1)) ${src} 2>/dev/null | head -c 512 > ${tmpfile}
-
-	local iscompressed=$(file -b "${tmpfile}")
-	if [[ ${iscompressed:0:8} == "compress" ]] ; then
-		iscompressed=1
-		mv ${tmpfile}{,.Z}
-		gunzip ${tmpfile}
-	else
-		iscompressed=0
-	fi
-	local istar=$(file -b "${tmpfile}")
-	if [[ ${istar:0:9} == "POSIX tar" ]] ; then
-		istar=1
-	else
-		istar=0
-	fi
-
-	#for some reason gzip dies with this ... dd cant provide buffer fast enough ?
-	#dd if=${src} ibs=${metaskip} count=1 \
-	#	| dd ibs=${tailskip} skip=1 \
-	#	| gzip -dc \
-	#	> ${datafile}
-	if [ ${iscompressed} -eq 1 ] ; then
-		if [ ${istar} -eq 1 ] ; then
-			tail -c +$((${tailskip}+1)) ${src} 2>/dev/null \
-				| head -c $((${metaskip}-${tailskip})) \
-				| tar -xzf -
-		else
-			tail -c +$((${tailskip}+1)) ${src} 2>/dev/null \
-				| head -c $((${metaskip}-${tailskip})) \
-				| gzip -dc \
-				> ${datafile}
-		fi
-	else
-		if [ ${istar} -eq 1 ] ; then
-			tail -c +$((${tailskip}+1)) ${src} 2>/dev/null \
-				| head -c $((${metaskip}-${tailskip})) \
-				| tar --no-same-owner -xf -
-		else
-			tail -c +$((${tailskip}+1)) ${src} 2>/dev/null \
-				| head -c $((${metaskip}-${tailskip})) \
-				> ${datafile}
-		fi
-	fi
-	true
-	#[ -s "${datafile}" ] || die "failure unpacking pdv ('${metaskip}' '${tailskip}' '${datafile}')"
-	#assert "failure unpacking pdv ('${metaskip}' '${tailskip}' '${datafile}')"
-}
-
-# @FUNCTION: unpack_makeself
-# @USAGE: [file to unpack] [offset] [tail|dd]
-# @DESCRIPTION:
-# Unpack those pesky makeself generated files ...
-# They're shell scripts with the binary package tagged onto
-# the end of the archive.  Loki utilized the format as does
-# many other game companies.
-#
-# If the file is not specified, then ${A} is used.  If the
-# offset is not specified then we will attempt to extract
-# the proper offset from the script itself.
-unpack_makeself() {
-	local src_input=${1:-${A}}
-	local src=$(find_unpackable_file "${src_input}")
-	local skip=$2
-	local exe=$3
-
-	[[ -z ${src} ]] && die "Could not locate source for '${src_input}'"
-
-	local shrtsrc=$(basename "${src}")
-	echo ">>> Unpacking ${shrtsrc} to ${PWD}"
-	if [[ -z ${skip} ]] ; then
-		local ver=$(grep -m1 -a '#.*Makeself' "${src}" | awk '{print $NF}')
-		local skip=0
-		exe=tail
-		case ${ver} in
-			1.5.*|1.6.0-nv)	# tested 1.5.{3,4,5} ... guessing 1.5.x series is same
-				skip=$(grep -a ^skip= "${src}" | cut -d= -f2)
-				;;
-			2.0|2.0.1)
-				skip=$(grep -a ^$'\t'tail "${src}" | awk '{print $2}' | cut -b2-)
-				;;
-			2.1.1)
-				skip=$(grep -a ^offset= "${src}" | awk '{print $2}' | cut -b2-)
-				(( skip++ ))
-				;;
-			2.1.2)
-				skip=$(grep -a ^offset= "${src}" | awk '{print $3}' | head -n 1)
-				(( skip++ ))
-				;;
-			2.1.3)
-				skip=`grep -a ^offset= "${src}" | awk '{print $3}'`
-				(( skip++ ))
-				;;
-			2.1.4|2.1.5)
-				skip=$(grep -a offset=.*head.*wc "${src}" | awk '{print $3}' | head -n 1)
-				skip=$(head -n ${skip} "${src}" | wc -c)
-				exe="dd"
-				;;
-			*)
-				eerror "I'm sorry, but I was unable to support the Makeself file."
-				eerror "The version I detected was '${ver}'."
-				eerror "Please file a bug about the file ${shrtsrc} at"
-				eerror "http://bugs.gentoo.org/ so that support can be added."
-				die "makeself version '${ver}' not supported"
-				;;
-		esac
-		debug-print "Detected Makeself version ${ver} ... using ${skip} as offset"
-	fi
-	case ${exe} in
-		tail)	exe="tail -n +${skip} '${src}'";;
-		dd)		exe="dd ibs=${skip} skip=1 if='${src}'";;
-		*)		die "makeself cant handle exe '${exe}'"
-	esac
-
-	# lets grab the first few bytes of the file to figure out what kind of archive it is
-	local filetype tmpfile=$(emktemp)
-	eval ${exe} 2>/dev/null | head -c 512 > "${tmpfile}"
-	filetype=$(file -b "${tmpfile}") || die
-	case ${filetype} in
-		*tar\ archive*)
-			eval ${exe} | tar --no-same-owner -xf -
-			;;
-		bzip2*)
-			eval ${exe} | bzip2 -dc | tar --no-same-owner -xf -
-			;;
-		gzip*)
-			eval ${exe} | tar --no-same-owner -xzf -
-			;;
-		compress*)
-			eval ${exe} | gunzip | tar --no-same-owner -xf -
-			;;
-		*)
-			eerror "Unknown filetype \"${filetype}\" ?"
-			false
-			;;
-	esac
-	assert "failure unpacking (${filetype}) makeself ${shrtsrc} ('${ver}' +${skip})"
-}
-
-# @FUNCTION: cdrom_get_cds
-# @USAGE: <file on cd1> [file on cd2] [file on cd3] [...]
-# @DESCRIPTION:
-# Aquire cd(s) for those lovely cd-based emerges.  Yes, this violates
-# the whole 'non-interactive' policy, but damnit I want CD support !
-#
-# With these cdrom functions we handle all the user interaction and
-# standardize everything.  All you have to do is call cdrom_get_cds()
-# and when the function returns, you can assume that the cd has been
-# found at CDROM_ROOT.
-#
-# The function will attempt to locate a cd based upon a file that is on
-# the cd.  The more files you give this function, the more cds
-# the cdrom functions will handle.
-#
-# Normally the cdrom functions will refer to the cds as 'cd #1', 'cd #2',
-# etc...  If you want to give the cds better names, then just export
-# the appropriate CDROM_NAME variable before calling cdrom_get_cds().
-# Use CDROM_NAME for one cd, or CDROM_NAME_# for multiple cds.  You can
-# also use the CDROM_NAME_SET bash array.
-#
-# For those multi cd ebuilds, see the cdrom_load_next_cd() function.
-cdrom_get_cds() {
-	# first we figure out how many cds we're dealing with by
-	# the # of files they gave us
-	local cdcnt=0
-	local f=
-	for f in "$@" ; do
-		((++cdcnt))
-		export CDROM_CHECK_${cdcnt}="$f"
-	done
-	export CDROM_TOTAL_CDS=${cdcnt}
-	export CDROM_CURRENT_CD=1
-
-	# now we see if the user gave use CD_ROOT ...
-	# if they did, let's just believe them that it's correct
-	if [[ -n ${CD_ROOT}${CD_ROOT_1} ]] ; then
-		local var=
-		cdcnt=0
-		while [[ ${cdcnt} -lt ${CDROM_TOTAL_CDS} ]] ; do
-			((++cdcnt))
-			var="CD_ROOT_${cdcnt}"
-			[[ -z ${!var} ]] && var="CD_ROOT"
-			if [[ -z ${!var} ]] ; then
-				eerror "You must either use just the CD_ROOT"
-				eerror "or specify ALL the CD_ROOT_X variables."
-				eerror "In this case, you will need ${CDROM_TOTAL_CDS} CD_ROOT_X variables."
-				die "could not locate CD_ROOT_${cdcnt}"
-			fi
-		done
-		export CDROM_ROOT=${CD_ROOT_1:-${CD_ROOT}}
-		einfo "Found CD #${CDROM_CURRENT_CD} root at ${CDROM_ROOT}"
-		export CDROM_SET=-1
-		for f in ${CDROM_CHECK_1//:/ } ; do
-			((++CDROM_SET))
-			[[ -e ${CDROM_ROOT}/${f} ]] && break
-		done
-		export CDROM_MATCH=${f}
-		return
-	fi
-
-	# User didn't help us out so lets make sure they know they can
-	# simplify the whole process ...
-	if [[ ${CDROM_TOTAL_CDS} -eq 1 ]] ; then
-		einfo "This ebuild will need the ${CDROM_NAME:-cdrom for ${PN}}"
-		echo
-		einfo "If you do not have the CD, but have the data files"
-		einfo "mounted somewhere on your filesystem, just export"
-		einfo "the variable CD_ROOT so that it points to the"
-		einfo "directory containing the files."
-		echo
-		einfo "For example:"
-		einfo "export CD_ROOT=/mnt/cdrom"
-		echo
-	else
-		if [[ -n ${CDROM_NAME_SET} ]] ; then
-			# Translate the CDROM_NAME_SET array into CDROM_NAME_#
-			cdcnt=0
-			while [[ ${cdcnt} -lt ${CDROM_TOTAL_CDS} ]] ; do
-				((++cdcnt))
-				export CDROM_NAME_${cdcnt}="${CDROM_NAME_SET[$((${cdcnt}-1))]}"
-			done
-		fi
-
-		einfo "This package will need access to ${CDROM_TOTAL_CDS} cds."
-		cdcnt=0
-		while [[ ${cdcnt} -lt ${CDROM_TOTAL_CDS} ]] ; do
-			((++cdcnt))
-			var="CDROM_NAME_${cdcnt}"
-			[[ ! -z ${!var} ]] && einfo " CD ${cdcnt}: ${!var}"
-		done
-		echo
-		einfo "If you do not have the CDs, but have the data files"
-		einfo "mounted somewhere on your filesystem, just export"
-		einfo "the following variables so they point to the right place:"
-		einfon ""
-		cdcnt=0
-		while [[ ${cdcnt} -lt ${CDROM_TOTAL_CDS} ]] ; do
-			((++cdcnt))
-			echo -n " CD_ROOT_${cdcnt}"
-		done
-		echo
-		einfo "Or, if you have all the files in the same place, or"
-		einfo "you only have one cdrom, you can export CD_ROOT"
-		einfo "and that place will be used as the same data source"
-		einfo "for all the CDs."
-		echo
-		einfo "For example:"
-		einfo "export CD_ROOT_1=/mnt/cdrom"
-		echo
-	fi
-
-	export CDROM_SET=""
-	export CDROM_CURRENT_CD=0
-	cdrom_load_next_cd
-}
-
-# @FUNCTION: cdrom_load_next_cd
-# @DESCRIPTION:
-# Some packages are so big they come on multiple CDs.  When you're done reading
-# files off a CD and want access to the next one, just call this function.
-# Again, all the messy details of user interaction are taken care of for you.
-# Once this returns, just read the variable CDROM_ROOT for the location of the
-# mounted CD.  Note that you can only go forward in the CD list, so make sure
-# you only call this function when you're done using the current CD.
-cdrom_load_next_cd() {
-	local var
-	((++CDROM_CURRENT_CD))
-
-	unset CDROM_ROOT
-	var=CD_ROOT_${CDROM_CURRENT_CD}
-	[[ -z ${!var} ]] && var="CD_ROOT"
-	if [[ -z ${!var} ]] ; then
-		var="CDROM_CHECK_${CDROM_CURRENT_CD}"
-		_cdrom_locate_file_on_cd ${!var}
-	else
-		export CDROM_ROOT=${!var}
-	fi
-
-	einfo "Found CD #${CDROM_CURRENT_CD} root at ${CDROM_ROOT}"
-}
-
-# this is used internally by the cdrom_get_cds() and cdrom_load_next_cd()
-# functions.  this should *never* be called from an ebuild.
-# all it does is try to locate a give file on a cd ... if the cd isn't
-# found, then a message asking for the user to insert the cdrom will be
-# displayed and we'll hang out here until:
-# (1) the file is found on a mounted cdrom
-# (2) the user hits CTRL+C
-_cdrom_locate_file_on_cd() {
-	local mline=""
-	local showedmsg=0 showjolietmsg=0
-
-	while [[ -z ${CDROM_ROOT} ]] ; do
-		local i=0
-		local -a cdset=(${*//:/ })
-		if [[ -n ${CDROM_SET} ]] ; then
-			cdset=(${cdset[${CDROM_SET}]})
-		fi
-
-		while [[ -n ${cdset[${i}]} ]] ; do
-			local dir=$(dirname ${cdset[${i}]})
-			local file=$(basename ${cdset[${i}]})
-
-			local point= node= fs= foo=
-			while read point node fs foo ; do
-				[[ " cd9660 iso9660 udf " != *" ${fs} "* ]] && \
-					! [[ ${fs} == "subfs" && ",${opts}," == *",fs=cdfss,"* ]] \
-					&& continue
-				point=${point//\040/ }
-				[[ ! -d ${point}/${dir} ]] && continue
-				[[ -z $(find "${point}/${dir}" -maxdepth 1 -iname "${file}") ]] && continue
-				export CDROM_ROOT=${point}
-				export CDROM_SET=${i}
-				export CDROM_MATCH=${cdset[${i}]}
-				return
-			done <<< "$(get_mounts)"
-
-			((++i))
-		done
-
-		echo
-		if [[ ${showedmsg} -eq 0 ]] ; then
-			if [[ ${CDROM_TOTAL_CDS} -eq 1 ]] ; then
-				if [[ -z ${CDROM_NAME} ]] ; then
-					einfo "Please insert+mount the cdrom for ${PN} now !"
-				else
-					einfo "Please insert+mount the ${CDROM_NAME} cdrom now !"
-				fi
-			else
-				if [[ -z ${CDROM_NAME_1} ]] ; then
-					einfo "Please insert+mount cd #${CDROM_CURRENT_CD} for ${PN} now !"
-				else
-					local var="CDROM_NAME_${CDROM_CURRENT_CD}"
-					einfo "Please insert+mount the ${!var} cdrom now !"
-				fi
-			fi
-			showedmsg=1
-		fi
-		einfo "Press return to scan for the cd again"
-		einfo "or hit CTRL+C to abort the emerge."
-		echo
-		if [[ ${showjolietmsg} -eq 0 ]] ; then
-			showjolietmsg=1
-		else
-			ewarn "If you are having trouble with the detection"
-			ewarn "of your CD, it is possible that you do not have"
-			ewarn "Joliet support enabled in your kernel.  Please"
-			ewarn "check that CONFIG_JOLIET is enabled in your kernel."
-			ebeep 5
-		fi
-		read || die "something is screwed with your system"
-	done
+	_iconins ${FUNCNAME} "$@"
 }
 
 # @FUNCTION: strip-linguas
@@ -1415,7 +1107,7 @@ strip-linguas() {
 		fi
 	done
 	[[ -n ${nols} ]] \
-		&& ewarn "Sorry, but ${PN} does not support the LINGUAS:" ${nols}
+		&& einfo "Sorry, but ${PN} does not support the LINGUAS:" ${nols}
 	export LINGUAS=${newls:1}
 }
 
@@ -1473,18 +1165,8 @@ preserve_old_lib_notify() {
 			ewarn "helper program, simply emerge the 'gentoolkit' package."
 			ewarn
 		fi
-		# temp hack for #348634 #357225
-		[[ ${PN} == "mpfr" ]] && lib=${lib##*/}
-		ewarn "  # revdep-rebuild --library '${lib}'"
+		ewarn "  # revdep-rebuild --library '${lib}' && rm '${lib}'"
 	done
-	if [[ ${notice} -eq 1 ]] ; then
-		ewarn
-		ewarn "Once you've finished running revdep-rebuild, it should be safe to"
-		ewarn "delete the old libraries.  Here is a copy & paste for the lazy:"
-		for lib in "$@" ; do
-			ewarn "  # rm '${lib}'"
-		done
-	fi
 }
 
 # @FUNCTION: built_with_use
@@ -1694,6 +1376,102 @@ use_if_iuse() {
 # If USE flag is set, echo [true output][true suffix] (defaults to "yes"),
 # otherwise echo [false output][false suffix] (defaults to "no").
 usex() { use "$1" && echo "${2-yes}$4" || echo "${3-no}$5" ; } #382963
+
+# @FUNCTION: prune_libtool_files
+# @USAGE: [--all]
+# @DESCRIPTION:
+# Locate unnecessary libtool files (.la) and libtool static archives
+# (.a) and remove them from installation image.
+#
+# By default, .la files are removed whenever the static linkage can
+# either be performed using pkg-config or doesn't introduce additional
+# flags.
+#
+# If '--all' argument is passed, all .la files are removed. This is
+# usually useful when the package installs plugins and does not use .la
+# files for loading them.
+#
+# The .a files are only removed whenever corresponding .la files state
+# that they should not be linked to, i.e. whenever these files
+# correspond to plugins.
+#
+# Note: if your package installs any .pc files, this function implicitly
+# calls pkg-config. You should add it to your DEPEND in that case.
+prune_libtool_files() {
+	debug-print-function ${FUNCNAME} "$@"
+
+	local removing_all opt
+	for opt; do
+		case "${opt}" in
+			--all)
+				removing_all=1
+				;;
+			*)
+				die "Invalid argument to ${FUNCNAME}(): ${opt}"
+		esac
+	done
+
+	# Create a list of all .pc-covered libs.
+	local pc_libs=()
+	if [[ ! ${removing_all} ]]; then
+		local f
+		local tf=${T}/prune-lt-files.pc
+		local pkgconf=$(tc-getPKG_CONFIG)
+
+		while IFS= read -r -d '' f; do # for all .pc files
+			local arg
+
+			sed -e '/^Requires:/d' "${f}" > "${tf}"
+			for arg in $("${pkgconf}" --libs "${tf}"); do
+				[[ ${arg} == -l* ]] && pc_libs+=( lib${arg#-l}.la )
+			done
+		done < <(find "${D}" -type f -name '*.pc' -print0)
+
+		rm -f "${tf}"
+	fi
+
+	local f
+	while IFS= read -r -d '' f; do # for all .la files
+		local archivefile=${f/%.la/.a}
+
+		[[ ${f} != ${archivefile} ]] || die 'regex sanity check failed'
+
+		# Remove static libs we're not supposed to link against.
+		if grep -q '^shouldnotlink=yes$' "${f}"; then
+			if [[ -f ${archivefile} ]]; then
+				einfo "Removing unnecessary ${archivefile#${D%/}} (static plugin)"
+				rm -f "${archivefile}"
+			fi
+
+			# The .la file may be used by a module loader, so avoid removing it
+			# unless explicitly requested.
+			[[ ${removing_all} ]] || continue
+		fi
+
+		# Remove .la files when:
+		# - user explicitly wants us to remove all .la files,
+		# - respective static archive doesn't exist,
+		# - they are covered by a .pc file already,
+		# - they don't provide any new information (no libs & no flags).
+		local reason
+		if [[ ${removing_all} ]]; then
+			reason='requested'
+		elif [[ ! -f ${archivefile} ]]; then
+			reason='no static archive'
+		elif has "${f##*/}" "${pc_libs[@]}"; then
+			reason='covered by .pc'
+		elif [[ ! $(sed -nre \
+				"s/^(dependency_libs|inherited_linker_flags)='(.*)'$/\2/p" \
+				"${f}") ]]; then
+			reason='no libs & flags'
+		fi
+
+		if [[ ${reason} ]]; then
+			einfo "Removing unnecessary ${f#${D%/}} (${reason})"
+			rm -f "${f}"
+		fi
+	done < <(find "${D}" -type f -name '*.la' -print0)
+}
 
 check_license() { die "you no longer need this as portage supports ACCEPT_LICENSE itself"; }
 
