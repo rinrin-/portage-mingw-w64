@@ -19,3 +19,6 @@ dev-lang/perl-5.10.1
 sys-devel/bc-1.06
 sys-devel/bison-2.4.2
 sys-devel/flex-2.5.35
+sys-apps/groff-1.21
+sys-apps/sed-4.2.1
+sys-apps/file-5.11
