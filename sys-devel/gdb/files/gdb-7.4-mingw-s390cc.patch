@@ -1,0 +1,12 @@
+diff -BurN gdb-7.4.old/opcodes/Makefile.in gdb-7.4/opcodes/Makefile.in
+--- gdb-7.4.old/opcodes/Makefile.in	2012-07-10 15:35:09.012503300 +0800
++++ gdb-7.4/opcodes/Makefile.in	2012-07-10 17:40:07.190685000 +0800
+@@ -1383,7 +1383,7 @@
+ 	$(COMPILE_FOR_BUILD) -c $(srcdir)/opc2c.c
+ 
+ s390-mkopc$(EXEEXT_FOR_BUILD): s390-mkopc.c
+-	$(COMPILE_FOR_BUILD) -o s390-mkopc $(srcdir)/s390-mkopc.c
++	$(COMPILE) -o s390-mkopc $(srcdir)/s390-mkopc.c
+ 
+ s390-opc.tab: s390-mkopc$(EXEEXT_FOR_BUILD) s390-opc.txt
+ 	./s390-mkopc$(EXEEXT_FOR_BUILD) < $(srcdir)/s390-opc.txt > s390-opc.tab

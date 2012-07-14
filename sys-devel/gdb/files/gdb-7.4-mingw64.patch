@@ -1,0 +1,791 @@
+diff -BurN gdb-7.4.old/bfd/archive.c gdb-7.4/bfd/archive.c
+--- gdb-7.4.old/bfd/archive.c	2012-07-10 15:35:00.997497700 +0800
++++ gdb-7.4/bfd/archive.c	2012-07-11 12:36:33.691123200 +0800
+@@ -1498,6 +1498,34 @@
+   return _bfd_construct_extended_name_table (abfd, TRUE, tabloc, tablen);
+ }
+ 
++/* PE-COFF long filenames are null terminated, not "/\012", which is
++   what the coff archiver function does.  So we call general function
++   without asking for terminating slashes.  Then, we replace
++   all of the '\012' characters with '\0'.
++   Information obtained from the PE-COFF Specification version 8.1,
++   section 7.5 on the Longnames member. */
++
++bfd_boolean
++_bfd_archive_pecoff_construct_extended_name_table (bfd *abfd,
++						   char **tabloc,
++						   bfd_size_type *tablen,
++						   const char **name)
++{
++  bfd_size_type i;
++  char *strptr;
++  *name = "//";
++  if (! _bfd_construct_extended_name_table (abfd, FALSE, tabloc, tablen))
++    return FALSE;
++
++  strptr = *tabloc;
++  for (i = 0; i < *tablen; ++ i)
++    {
++      if (strptr[i] == ARFMAG[1])
++        strptr[i] = '\0';
++    }
++  return TRUE;
++}
++
+ /* Follows archive_head and produces an extended name table if
+    necessary.  Returns (in tabloc) a pointer to an extended name
+    table, and in tablen the length of the table.  If it makes an entry
+diff -BurN gdb-7.4.old/bfd/coffcode.h gdb-7.4/bfd/coffcode.h
+--- gdb-7.4.old/bfd/coffcode.h	2012-07-10 15:35:01.075502100 +0800
++++ gdb-7.4/bfd/coffcode.h	2012-07-11 12:36:33.737923300 +0800
+@@ -5683,6 +5683,10 @@
+ #define coff_bfd_define_common_symbol	    bfd_generic_define_common_symbol
+ #endif
+ 
++/* Define the PE-COFF generators with the correct tables. */
++
++#ifndef COFF_WITH_PE
++
+ #define CREATE_BIG_COFF_TARGET_VEC(VAR, NAME, EXTRA_O_FLAGS, EXTRA_S_FLAGS, UNDER, ALTERNATIVE, SWAP_TABLE)	\
+ const bfd_target VAR =							\
+ {									\
+@@ -5833,3 +5837,155 @@
+ 									\
+   SWAP_TABLE								\
+ };
++
++#else /* COFF_WITH_PE */
++
++#define CREATE_BIG_COFF_TARGET_VEC(VAR, NAME, EXTRA_O_FLAGS, EXTRA_S_FLAGS, UNDER, ALTERNATIVE, SWAP_TABLE)	\
++const bfd_target VAR =							\
++{									\
++  NAME ,								\
++  bfd_target_coff_flavour,						\
++  BFD_ENDIAN_BIG,		/* Data byte order is big.  */		\
++  BFD_ENDIAN_BIG,		/* Header byte order is big.  */	\
++  /* object flags */							\
++  (HAS_RELOC | EXEC_P | HAS_LINENO | HAS_DEBUG |			\
++   HAS_SYMS | HAS_LOCALS | WP_TEXT | EXTRA_O_FLAGS),			\
++  /* section flags */							\
++  (SEC_HAS_CONTENTS | SEC_ALLOC | SEC_LOAD | SEC_RELOC | EXTRA_S_FLAGS),\
++  UNDER,			/* Leading symbol underscore.  */	\
++  '/',				/* AR_pad_char.  */			\
++  15,				/* AR_max_namelen.  */			\
++									\
++  /* Data conversion functions.  */					\
++  bfd_getb64, bfd_getb_signed_64, bfd_putb64,				\
++  bfd_getb32, bfd_getb_signed_32, bfd_putb32,				\
++  bfd_getb16, bfd_getb_signed_16, bfd_putb16,				\
++									\
++  /* Header conversion functions.  */					\
++  bfd_getb64, bfd_getb_signed_64, bfd_putb64,				\
++  bfd_getb32, bfd_getb_signed_32, bfd_putb32,				\
++  bfd_getb16, bfd_getb_signed_16, bfd_putb16,				\
++									\
++	/* bfd_check_format.  */					\
++  { _bfd_dummy_target, coff_object_p, bfd_generic_archive_p,		\
++    _bfd_dummy_target },						\
++	/* bfd_set_format.  */						\
++  { bfd_false, coff_mkobject, _bfd_generic_mkarchive, bfd_false },	\
++	/* bfd_write_contents.  */					\
++  { bfd_false, coff_write_object_contents, _bfd_write_archive_contents,	\
++    bfd_false },							\
++									\
++  BFD_JUMP_TABLE_GENERIC (coff),					\
++  BFD_JUMP_TABLE_COPY (coff),						\
++  BFD_JUMP_TABLE_CORE (_bfd_nocore),					\
++  BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_pecoff),				\
++  BFD_JUMP_TABLE_SYMBOLS (coff),					\
++  BFD_JUMP_TABLE_RELOCS (coff),						\
++  BFD_JUMP_TABLE_WRITE (coff),						\
++  BFD_JUMP_TABLE_LINK (coff),						\
++  BFD_JUMP_TABLE_DYNAMIC (_bfd_nodynamic),				\
++									\
++  ALTERNATIVE,								\
++									\
++  SWAP_TABLE								\
++};
++
++#define CREATE_BIGHDR_COFF_TARGET_VEC(VAR, NAME, EXTRA_O_FLAGS, EXTRA_S_FLAGS, UNDER, ALTERNATIVE, SWAP_TABLE)	\
++const bfd_target VAR =							\
++{									\
++  NAME ,								\
++  bfd_target_coff_flavour,						\
++  BFD_ENDIAN_LITTLE,		/* Data byte order is little.  */	\
++  BFD_ENDIAN_BIG,		/* Header byte order is big.  */	\
++  /* object flags */							\
++  (HAS_RELOC | EXEC_P | HAS_LINENO | HAS_DEBUG |			\
++   HAS_SYMS | HAS_LOCALS | WP_TEXT | EXTRA_O_FLAGS),			\
++  /* section flags */							\
++  (SEC_HAS_CONTENTS | SEC_ALLOC | SEC_LOAD | SEC_RELOC | EXTRA_S_FLAGS),\
++  UNDER,			/* Leading symbol underscore.  */	\
++  '/',				/* AR_pad_char.  */			\
++  15,				/* AR_max_namelen.  */			\
++									\
++  /* Data conversion functions.  */					\
++  bfd_getb64, bfd_getb_signed_64, bfd_putb64,				\
++  bfd_getb32, bfd_getb_signed_32, bfd_putb32,				\
++  bfd_getb16, bfd_getb_signed_16, bfd_putb16,				\
++									\
++  /* Header conversion functions.  */					\
++  bfd_getb64, bfd_getb_signed_64, bfd_putb64,				\
++  bfd_getb32, bfd_getb_signed_32, bfd_putb32,				\
++  bfd_getb16, bfd_getb_signed_16, bfd_putb16,				\
++									\
++	/* bfd_check_format.  */					\
++  { _bfd_dummy_target, coff_object_p, bfd_generic_archive_p,		\
++    _bfd_dummy_target },						\
++	/* bfd_set_format.  */						\
++  { bfd_false, coff_mkobject, _bfd_generic_mkarchive, bfd_false },	\
++	/* bfd_write_contents.  */					\
++  { bfd_false, coff_write_object_contents, _bfd_write_archive_contents,	\
++    bfd_false },							\
++									\
++  BFD_JUMP_TABLE_GENERIC (coff),					\
++  BFD_JUMP_TABLE_COPY (coff),						\
++  BFD_JUMP_TABLE_CORE (_bfd_nocore),					\
++  BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_pecoff),				\
++  BFD_JUMP_TABLE_SYMBOLS (coff),					\
++  BFD_JUMP_TABLE_RELOCS (coff),						\
++  BFD_JUMP_TABLE_WRITE (coff),						\
++  BFD_JUMP_TABLE_LINK (coff),						\
++  BFD_JUMP_TABLE_DYNAMIC (_bfd_nodynamic),				\
++									\
++  ALTERNATIVE,								\
++									\
++  SWAP_TABLE								\
++};
++
++#define CREATE_LITTLE_COFF_TARGET_VEC(VAR, NAME, EXTRA_O_FLAGS, EXTRA_S_FLAGS, UNDER, ALTERNATIVE, SWAP_TABLE)	\
++const bfd_target VAR =							\
++{									\
++  NAME ,								\
++  bfd_target_coff_flavour,						\
++  BFD_ENDIAN_LITTLE,		/* Data byte order is little.  */	\
++  BFD_ENDIAN_LITTLE,		/* Header byte order is little.  */	\
++	/* object flags */						\
++  (HAS_RELOC | EXEC_P | HAS_LINENO | HAS_DEBUG |			\
++   HAS_SYMS | HAS_LOCALS | WP_TEXT | EXTRA_O_FLAGS),			\
++	/* section flags */						\
++  (SEC_HAS_CONTENTS | SEC_ALLOC | SEC_LOAD | SEC_RELOC | EXTRA_S_FLAGS),\
++  UNDER,			/* Leading symbol underscore.  */	\
++  '/',				/* AR_pad_char.  */			\
++  15,				/* AR_max_namelen.  */			\
++									\
++  /* Data conversion functions.  */					\
++  bfd_getl64, bfd_getl_signed_64, bfd_putl64,				\
++  bfd_getl32, bfd_getl_signed_32, bfd_putl32,				\
++  bfd_getl16, bfd_getl_signed_16, bfd_putl16,				\
++  /* Header conversion functions.  */					\
++  bfd_getl64, bfd_getl_signed_64, bfd_putl64,				\
++  bfd_getl32, bfd_getl_signed_32, bfd_putl32,				\
++  bfd_getl16, bfd_getl_signed_16, bfd_putl16,				\
++	/* bfd_check_format.  */					\
++  { _bfd_dummy_target, coff_object_p, bfd_generic_archive_p,		\
++    _bfd_dummy_target },						\
++       /* bfd_set_format.  */						\
++  { bfd_false, coff_mkobject, _bfd_generic_mkarchive, bfd_false },	\
++	/* bfd_write_contents.  */					\
++  { bfd_false, coff_write_object_contents, _bfd_write_archive_contents,	\
++    bfd_false },							\
++									\
++  BFD_JUMP_TABLE_GENERIC (coff),					\
++  BFD_JUMP_TABLE_COPY (coff),						\
++  BFD_JUMP_TABLE_CORE (_bfd_nocore),					\
++  BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_pecoff),				\
++  BFD_JUMP_TABLE_SYMBOLS (coff),					\
++  BFD_JUMP_TABLE_RELOCS (coff),						\
++  BFD_JUMP_TABLE_WRITE (coff),						\
++  BFD_JUMP_TABLE_LINK (coff),						\
++  BFD_JUMP_TABLE_DYNAMIC (_bfd_nodynamic),				\
++									\
++  ALTERNATIVE,								\
++									\
++  SWAP_TABLE								\
++};
++
++#endif /* COFF_WITH_PE */
+diff -BurN gdb-7.4.old/bfd/coff-i386.c gdb-7.4/bfd/coff-i386.c
+--- gdb-7.4.old/bfd/coff-i386.c	2012-07-10 15:35:01.044500400 +0800
++++ gdb-7.4/bfd/coff-i386.c	2012-07-11 12:36:33.691123200 +0800
+@@ -686,7 +686,11 @@
+      BFD_JUMP_TABLE_GENERIC (coff),
+      BFD_JUMP_TABLE_COPY (coff),
+      BFD_JUMP_TABLE_CORE (_bfd_nocore),
++#ifndef COFF_WITH_PE
+      BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_coff),
++#else
++     BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_pecoff),
++#endif
+      BFD_JUMP_TABLE_SYMBOLS (coff),
+      BFD_JUMP_TABLE_RELOCS (coff),
+      BFD_JUMP_TABLE_WRITE (coff),
+diff -BurN gdb-7.4.old/bfd/coff-ia64.c gdb-7.4/bfd/coff-ia64.c
+--- gdb-7.4.old/bfd/coff-ia64.c	2012-07-10 15:35:01.048500600 +0800
++++ gdb-7.4/bfd/coff-ia64.c	2012-07-11 12:36:33.691123200 +0800
+@@ -196,7 +196,11 @@
+      BFD_JUMP_TABLE_GENERIC (coff),
+      BFD_JUMP_TABLE_COPY (coff),
+      BFD_JUMP_TABLE_CORE (_bfd_nocore),
++#ifndef COFF_WITH_PE
+      BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_coff),
++#else
++     BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_pecoff),
++#endif
+      BFD_JUMP_TABLE_SYMBOLS (coff),
+      BFD_JUMP_TABLE_RELOCS (coff),
+      BFD_JUMP_TABLE_WRITE (coff),
+diff -BurN gdb-7.4.old/bfd/coff-ppc.c gdb-7.4/bfd/coff-ppc.c
+--- gdb-7.4.old/bfd/coff-ppc.c	2012-07-10 15:35:01.054500900 +0800
++++ gdb-7.4/bfd/coff-ppc.c	2012-07-11 12:36:33.706723200 +0800
+@@ -2601,7 +2601,11 @@
+   BFD_JUMP_TABLE_GENERIC (coff),
+   BFD_JUMP_TABLE_COPY (coff),
+   BFD_JUMP_TABLE_CORE (_bfd_nocore),
++#ifndef COFF_WITH_PE
+   BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_coff),
++#else
++  BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_pecoff),
++#endif
+   BFD_JUMP_TABLE_SYMBOLS (coff),
+   BFD_JUMP_TABLE_RELOCS (coff),
+   BFD_JUMP_TABLE_WRITE (coff),
+@@ -2661,7 +2665,11 @@
+   BFD_JUMP_TABLE_GENERIC (coff),
+   BFD_JUMP_TABLE_COPY (coff),
+   BFD_JUMP_TABLE_CORE (_bfd_nocore),
++#ifndef COFF_WITH_PE
+   BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_coff),
++#else
++  BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_pecoff),
++#endif
+   BFD_JUMP_TABLE_SYMBOLS (coff),
+   BFD_JUMP_TABLE_RELOCS (coff),
+   BFD_JUMP_TABLE_WRITE (coff),
+diff -BurN gdb-7.4.old/bfd/coff-sh.c gdb-7.4/bfd/coff-sh.c
+--- gdb-7.4.old/bfd/coff-sh.c	2012-07-10 15:35:01.057501100 +0800
++++ gdb-7.4/bfd/coff-sh.c	2012-07-11 12:36:33.706723200 +0800
+@@ -3203,7 +3203,11 @@
+   BFD_JUMP_TABLE_GENERIC (coff_small),
+   BFD_JUMP_TABLE_COPY (coff),
+   BFD_JUMP_TABLE_CORE (_bfd_nocore),
++#ifndef COFF_WITH_PE
+   BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_coff),
++#else
++  BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_pecoff),
++#endif
+   BFD_JUMP_TABLE_SYMBOLS (coff),
+   BFD_JUMP_TABLE_RELOCS (coff),
+   BFD_JUMP_TABLE_WRITE (coff),
+@@ -3248,7 +3252,11 @@
+   BFD_JUMP_TABLE_GENERIC (coff_small),
+   BFD_JUMP_TABLE_COPY (coff),
+   BFD_JUMP_TABLE_CORE (_bfd_nocore),
++#ifndef COFF_WITH_PE
+   BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_coff),
++#else
++  BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_pecoff),
++#endif
+   BFD_JUMP_TABLE_SYMBOLS (coff),
+   BFD_JUMP_TABLE_RELOCS (coff),
+   BFD_JUMP_TABLE_WRITE (coff),
+diff -BurN gdb-7.4.old/bfd/coff-x86_64.c gdb-7.4/bfd/coff-x86_64.c
+--- gdb-7.4.old/bfd/coff-x86_64.c	2012-07-10 15:35:01.070501800 +0800
++++ gdb-7.4/bfd/coff-x86_64.c	2012-07-11 12:36:33.722323300 +0800
+@@ -783,7 +783,11 @@
+   BFD_JUMP_TABLE_GENERIC (coff),
+   BFD_JUMP_TABLE_COPY (coff),
+   BFD_JUMP_TABLE_CORE (_bfd_nocore),
++#ifndef COFF_WITH_PE
+   BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_coff),
++#else
++  BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_pecoff),
++#endif
+   BFD_JUMP_TABLE_SYMBOLS (coff),
+   BFD_JUMP_TABLE_RELOCS (coff),
+   BFD_JUMP_TABLE_WRITE (coff),
+diff -BurN gdb-7.4.old/bfd/doc/Makefile.am gdb-7.4/bfd/doc/Makefile.am
+--- gdb-7.4.old/bfd/doc/Makefile.am	2012-07-12 17:02:52.713820400 +0800
++++ gdb-7.4/bfd/doc/Makefile.am	2012-07-12 17:03:09.003065700 +0800
+@@ -60,7 +60,7 @@
+ 	-I$(srcdir)/../../intl -I../../intl
+ 
+ $(MKDOC): $(srcdir)/chew.c
+-	$(CC_FOR_BUILD) -o chew.$$$$ $(CFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) \
++	$(CC) -o chew.$$$$ $(CFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) \
+ 	  $(H_CFLAGS) $(AM_CPPFLAGS) $(srcdir)/chew.c; \
+ 	$(SHELL) $(srcdir)/../../move-if-change chew.$$$$ $(MKDOC)
+ 
+diff -BurN gdb-7.4.old/bfd/doc/Makefile.in gdb-7.4/bfd/doc/Makefile.in
+--- gdb-7.4.old/bfd/doc/Makefile.in	2012-07-12 17:02:40.681132100 +0800
++++ gdb-7.4/bfd/doc/Makefile.in	2012-07-12 17:03:21.238765500 +0800
+@@ -757,7 +757,7 @@
+ 
+ 
+ $(MKDOC): $(srcdir)/chew.c
+-	$(CC_FOR_BUILD) -o chew.$$$$ $(CFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) \
++	$(CC) -o chew.$$$$ $(CFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) \
+ 	  $(H_CFLAGS) $(AM_CPPFLAGS) $(srcdir)/chew.c; \
+ 	$(SHELL) $(srcdir)/../../move-if-change chew.$$$$ $(MKDOC)
+ 
+diff -BurN gdb-7.4.old/bfd/libbfd.h gdb-7.4/bfd/libbfd.h
+--- gdb-7.4.old/bfd/libbfd.h	2012-07-10 15:35:01.477525100 +0800
++++ gdb-7.4/bfd/libbfd.h	2012-07-11 12:36:33.753523300 +0800
+@@ -336,6 +336,29 @@
+   bfd_generic_stat_arch_elt
+ #define _bfd_archive_coff_update_armap_timestamp bfd_true
+ 
++/* Routines to use for BFD_JUMP_TABLE_ARCHIVE to get PE-COFF style
++   archives.  Use BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_pecoff).
++   Unless overridden, they default to the COFF functions.  */
++
++#define _bfd_archive_pecoff_slurp_armap _bfd_archive_coff_slurp_armap
++#define _bfd_archive_pecoff_slurp_extended_name_table \
++  _bfd_archive_coff_slurp_extended_name_table
++extern bfd_boolean _bfd_archive_pecoff_construct_extended_name_table
++  (bfd *, char **, bfd_size_type *, const char **);
++#define _bfd_archive_pecoff_truncate_arname \
++  _bfd_archive_coff_truncate_arname
++#define _bfd_archive_pecoff_write_armap _bfd_archive_coff_write_armap
++#define _bfd_archive_pecoff_read_ar_hdr _bfd_archive_coff_read_ar_hdr
++#define _bfd_archive_pecoff_write_ar_hdr _bfd_archive_coff_write_ar_hdr
++#define _bfd_archive_pecoff_openr_next_archived_file \
++  _bfd_archive_coff_openr_next_archived_file
++#define _bfd_archive_pecoff_get_elt_at_index \
++  _bfd_archive_coff_get_elt_at_index
++#define _bfd_archive_pecoff_generic_stat_arch_elt \
++  _bfd_archive_coff_generic_stat_arch_elt
++#define _bfd_archive_pecoff_update_armap_timestamp \
++  _bfd_archive_coff_update_armap_timestamp
++
+ /* Routines to use for BFD_JUMP_TABLE_ARCHIVE to get BSD4.4 style
+    archives.  Use BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_bsd44).  */
+ 
+diff -BurN gdb-7.4.old/bfd/libbfd-in.h gdb-7.4/bfd/libbfd-in.h
+--- gdb-7.4.old/bfd/libbfd-in.h	2012-07-10 15:35:01.474525000 +0800
++++ gdb-7.4/bfd/libbfd-in.h	2012-07-11 12:36:33.753523300 +0800
+@@ -331,6 +331,29 @@
+   bfd_generic_stat_arch_elt
+ #define _bfd_archive_coff_update_armap_timestamp bfd_true
+ 
++/* Routines to use for BFD_JUMP_TABLE_ARCHIVE to get PE-COFF style
++   archives.  Use BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_pecoff).
++   Unless overridden, they default to the COFF functions.  */
++
++#define _bfd_archive_pecoff_slurp_armap _bfd_archive_coff_slurp_armap
++#define _bfd_archive_pecoff_slurp_extended_name_table \
++  _bfd_archive_coff_slurp_extended_name_table
++extern bfd_boolean _bfd_archive_pecoff_construct_extended_name_table
++  (bfd *, char **, bfd_size_type *, const char **);
++#define _bfd_archive_pecoff_truncate_arname \
++  _bfd_archive_coff_truncate_arname
++#define _bfd_archive_pecoff_write_armap _bfd_archive_coff_write_armap
++#define _bfd_archive_pecoff_read_ar_hdr _bfd_archive_coff_read_ar_hdr
++#define _bfd_archive_pecoff_write_ar_hdr _bfd_archive_coff_write_ar_hdr
++#define _bfd_archive_pecoff_openr_next_archived_file \
++  _bfd_archive_coff_openr_next_archived_file
++#define _bfd_archive_pecoff_get_elt_at_index \
++  _bfd_archive_coff_get_elt_at_index
++#define _bfd_archive_pecoff_generic_stat_arch_elt \
++  _bfd_archive_coff_generic_stat_arch_elt
++#define _bfd_archive_pecoff_update_armap_timestamp \
++  _bfd_archive_coff_update_armap_timestamp
++
+ /* Routines to use for BFD_JUMP_TABLE_ARCHIVE to get BSD4.4 style
+    archives.  Use BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_bsd44).  */
+ 
+diff -BurN gdb-7.4.old/bfd/pe-mips.c gdb-7.4/bfd/pe-mips.c
+--- gdb-7.4.old/bfd/pe-mips.c	2012-07-10 15:35:01.544529000 +0800
++++ gdb-7.4/bfd/pe-mips.c	2012-07-11 12:36:33.769123400 +0800
+@@ -910,7 +910,11 @@
+   BFD_JUMP_TABLE_GENERIC (coff),
+   BFD_JUMP_TABLE_COPY (coff),
+   BFD_JUMP_TABLE_CORE (_bfd_nocore),
++#ifndef COFF_WITH_PE
+   BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_coff),
++#else
++  BFD_JUMP_TABLE_ARCHIVE (_bfd_archive_pecoff),
++#endif
+   BFD_JUMP_TABLE_SYMBOLS (coff),
+   BFD_JUMP_TABLE_RELOCS (coff),
+   BFD_JUMP_TABLE_WRITE (coff),
+diff -BurN gdb-7.4.old/gdb/dwarf2read.c gdb-7.4/gdb/dwarf2read.c
+--- gdb-7.4.old/gdb/dwarf2read.c	2012-07-10 15:35:02.562587200 +0800
++++ gdb-7.4/gdb/dwarf2read.c	2012-07-11 12:36:33.815923400 +0800
+@@ -5618,12 +5618,12 @@
+   attr = dwarf2_attr (die, DW_AT_comp_dir, cu);
+   if (attr)
+     *comp_dir = DW_STRING (attr);
+-  else if (*name != NULL && IS_ABSOLUTE_PATH (*name))
++  else
+     {
+-      *comp_dir = ldirname (*name);
+-      if (*comp_dir != NULL)
+-	make_cleanup (xfree, *comp_dir);
++      /* Do not try to deduce DW_AT_comp_dir from absolute DW_AT_name, this
++	 does not have to be the compilation directory.  */
+     }
++
+   if (*comp_dir != NULL)
+     {
+       /* Irix 6.2 native cc prepends <machine>.: to the compilation
+diff -BurN gdb-7.4.old/gdb/frame.c gdb-7.4/gdb/frame.c
+--- gdb-7.4.old/gdb/frame.c	2012-07-10 15:35:02.897606400 +0800
++++ gdb-7.4/gdb/frame.c	2012-07-11 12:36:33.815923400 +0800
+@@ -43,7 +43,9 @@
+ #include "gdbthread.h"
+ #include "block.h"
+ #include "inline-frame.h"
+-#include  "tracepoint.h"
++#include "tracepoint.h"
++#include "filenames.h"
++#include "source.h"
+ 
+ static struct frame_info *get_prev_frame_1 (struct frame_info *this_frame);
+ static struct frame_info *get_prev_frame_raw (struct frame_info *this_frame);
+@@ -135,6 +137,18 @@
+    sufficient for now.  */
+ static struct frame_info *frame_stash = NULL;
+ 
++/* Possible values of 'set backtrace filename-display'.  */
++static const char filename_display_basename[] = "basename";
++static const char filename_display_relative[] = "relative";
++static const char filename_display_absolute[] = "absolute";
++
++static const char *const filename_display_kind_names[] = {
++  filename_display_basename,
++  filename_display_relative,
++  filename_display_absolute,
++  NULL
++};
++
+ /* Add the following FRAME to the frame stash.  */
+ 
+ static void
+@@ -207,6 +221,16 @@
+ 		    value);
+ }
+ 
++static const char *filename_display_string = filename_display_relative;
++
++static void
++show_filename_display_string (struct ui_file *file, int from_tty,
++			      struct cmd_list_element *c, const char *value)
++{
++  fprintf_filtered (file,
++		    _("A filename is displayed in backtrace as \"%s\".\n"),
++		    value);
++}
+ 
+ static void
+ fprint_field (struct ui_file *file, const char *name, int p, CORE_ADDR addr)
+@@ -1502,12 +1526,30 @@
+   reinit_frame_cache ();
+ }
+ 
++typedef struct obstack obstack_s;
++DEF_VEC_O (obstack_s);
++static VEC (obstack_s) *frame_poison_vec;
++
++void frame_garbage_collection (void);
++void
++frame_garbage_collection (void)
++{
++  struct obstack *obstack_p;
++  int ix;
++
++  for (ix = 0; VEC_iterate (obstack_s, frame_poison_vec, ix, obstack_p); ix++)
++    obstack_free (obstack_p, 0);
++
++  VEC_free (obstack_s, frame_poison_vec);
++  frame_poison_vec = NULL;
++}
++
+ /* Flush the entire frame cache.  */
+ 
+ void
+ reinit_frame_cache (void)
+ {
+-  struct frame_info *fi;
++  struct frame_info *fi, *fi_prev;
+ 
+   /* Tear down all frame caches.  */
+   for (fi = current_frame; fi != NULL; fi = fi->prev)
+@@ -1518,8 +1560,14 @@
+ 	fi->base->unwind->dealloc_cache (fi, fi->base_cache);
+     }
+ 
++  for (fi = current_frame; fi != NULL; fi = fi_prev)
++    {
++      fi_prev = fi->prev;
++      memset (fi, 0, sizeof (*fi));
++    }
++  VEC_safe_push (obstack_s, frame_poison_vec, &frame_cache_obstack);
++
+   /* Since we can't really be sure what the first object allocated was.  */
+-  obstack_free (&frame_cache_obstack, 0);
+   obstack_init (&frame_cache_obstack);
+ 
+   if (current_frame != NULL)
+@@ -2118,6 +2166,28 @@
+   (*sal) = find_pc_line (pc, notcurrent);
+ }
+ 
++/* See commentary in frame.h.  */
++
++const char *
++get_filename_display_from_sal (const struct symtab_and_line *sal)
++{
++  const char *filename = sal->symtab->filename;
++
++  if (filename == NULL)
++      return NULL;
++  else if (filename_display_string == filename_display_basename)
++      return lbasename (filename);
++  else if (filename_display_string == filename_display_absolute)
++    {
++      const char *retval = symtab_to_fullname (sal->symtab);
++
++      if (retval != NULL)
++	return retval;
++    }
++
++  return filename;
++}
++
+ /* Per "frame.h", return the ``address'' of the frame.  Code should
+    really be using get_frame_id().  */
+ CORE_ADDR
+@@ -2477,6 +2547,21 @@
+ 			   &set_backtrace_cmdlist,
+ 			   &show_backtrace_cmdlist);
+ 
++  add_setshow_enum_cmd ("filename-display", class_obscure,
++			filename_display_kind_names,
++			&filename_display_string, _("\
++Set how to display filenames in backtraces."), _("\
++Show how to display filenames in backtraces."), _("\
++filename-display can be:\n\
++  basename       - display only basename of a filename\n\
++  relative       - display a filename without the compilation directory part\n\
++  absolute       - display an absolute filename\n\
++By default, as-recorded filename is displayed."),
++			NULL,
++			show_filename_display_string,
++			&set_backtrace_cmdlist,
++			&show_backtrace_cmdlist);
++
+   /* Debug this files internals.  */
+   add_setshow_zinteger_cmd ("frame", class_maintenance, &frame_debug,  _("\
+ Set frame debugging."), _("\
+diff -BurN gdb-7.4.old/gdb/frame.h gdb-7.4/gdb/frame.h
+--- gdb-7.4.old/gdb/frame.h	2012-07-10 15:35:02.899606500 +0800
++++ gdb-7.4/gdb/frame.h	2012-07-11 12:36:33.831523500 +0800
+@@ -353,6 +353,12 @@
+ extern void find_frame_sal (struct frame_info *frame,
+ 			    struct symtab_and_line *sal);
+ 
++/* Returns filename without the compile directory part, basename or absolute
++   filename.  It depends on 'set backtrace filename-display' value.  */
++
++extern const char *
++  get_filename_display_from_sal (const struct symtab_and_line *sal);
++
+ /* Set the current source and line to the location given by frame
+    FRAME, if possible.  When CENTER is true, adjust so the relevant
+    line is in the center of the next 'list'.  */
+diff -BurN gdb-7.4.old/gdb/progspace.c gdb-7.4/gdb/progspace.c
+--- gdb-7.4.old/gdb/progspace.c	2012-07-10 15:35:03.470639100 +0800
++++ gdb-7.4/gdb/progspace.c	2012-07-11 12:36:33.847123500 +0800
+@@ -480,17 +480,28 @@
+ void
+ switch_to_program_space_and_thread (struct program_space *pspace)
+ {
+-  struct inferior *inf;
++  struct inferior *inf = current_inferior ();
+ 
+-  inf = find_inferior_for_program_space (pspace);
++  if (inf->pspace != pspace)
++    inf = find_inferior_for_program_space (pspace);
+   if (inf != NULL)
+     {
+-      struct thread_info *tp;
++      struct thread_info *tp, *current_tp = NULL;
++
++      if (ptid_get_pid (inferior_ptid) == inf->pid)
++	current_tp = find_thread_ptid (inferior_ptid);
+ 
+       tp = any_live_thread_of_process (inf->pid);
+       if (tp != NULL)
+ 	{
+-	  switch_to_thread (tp->ptid);
++	  /* Prefer primarily thread not THREAD_EXITED and secondarily thread
++	     not EXECUTING.  */
++	  if (current_tp == NULL
++	      || (tp->state != THREAD_EXITED
++		  && current_tp->state == THREAD_EXITED)
++	      || (!tp->executing && current_tp->executing))
++	    switch_to_thread (tp->ptid);
++
+ 	  /* Switching thread switches pspace implicitly.  We're
+ 	     done.  */
+ 	  return;
+diff -BurN gdb-7.4.old/gdb/stack.c gdb-7.4/gdb/stack.c
+--- gdb-7.4.old/gdb/stack.c	2012-07-10 15:35:03.759655700 +0800
++++ gdb-7.4/gdb/stack.c	2012-07-11 12:36:33.862723500 +0800
+@@ -1173,11 +1173,13 @@
+   ui_out_text (uiout, ")");
+   if (sal.symtab && sal.symtab->filename)
+     {
++      const char *filename_display = get_filename_display_from_sal (&sal);
++
+       annotate_frame_source_begin ();
+       ui_out_wrap_hint (uiout, "   ");
+       ui_out_text (uiout, " at ");
+       annotate_frame_source_file ();
+-      ui_out_field_string (uiout, "file", sal.symtab->filename);
++      ui_out_field_string (uiout, "file", filename_display);
+       if (ui_out_is_mi_like_p (uiout))
+ 	{
+ 	  const char *fullname = symtab_to_fullname (sal.symtab);
+@@ -1817,6 +1819,10 @@
+ {
+   struct dict_iterator iter;
+   struct symbol *sym;
++  struct frame_info *frame;
++  struct symtab_and_line sal;
++  frame = get_selected_frame (NULL) ;
++  find_frame_sal (frame, &sal);
+ 
+   ALL_BLOCK_SYMBOLS (b, iter, sym)
+     {
+@@ -1828,6 +1834,8 @@
+ 	case LOC_COMPUTED:
+ 	  if (SYMBOL_IS_ARGUMENT (sym))
+ 	    break;
++	  if(sym->line>= sal.line)
++            break;
+ 	  (*cb) (SYMBOL_PRINT_NAME (sym), sym, cb_data);
+ 	  break;
+ 
+diff -BurN gdb-7.4.old/gdb/symtab.c gdb-7.4/gdb/symtab.c
+--- gdb-7.4.old/gdb/symtab.c	2012-07-10 15:35:03.771656300 +0800
++++ gdb-7.4/gdb/symtab.c	2012-07-11 12:36:33.878323500 +0800
+@@ -1803,6 +1803,8 @@
+ {
+   struct dict_iterator iter;
+   struct symbol *sym;
++  struct frame_info *frame;
++  struct symtab_and_line sal;
+ 
+   if (!BLOCK_FUNCTION (block))
+     {
+@@ -1812,7 +1814,20 @@
+ 	{
+ 	  if (symbol_matches_domain (SYMBOL_LANGUAGE (sym),
+ 				     SYMBOL_DOMAIN (sym), domain))
+-	    return sym;
++	    {
++	       if(SYMBOL_CLASS (sym)==LOC_LOCAL
++	          ||SYMBOL_CLASS (sym)==LOC_REGISTER
++		  ||SYMBOL_CLASS (sym)==LOC_COMPUTED)	  
++	       {
++		   frame = get_selected_frame (NULL) ;
++		   find_frame_sal (frame, &sal);
++		   if( block == get_frame_block (frame, 0) 
++		      && sym->line >= sal.line)
++			return NULL;
++	       }
++	       return sym;
++	    }
++	    
+ 	}
+       return NULL;
+     }
+@@ -1836,7 +1851,17 @@
+ 	      sym_found = sym;
+ 	      if (!SYMBOL_IS_ARGUMENT (sym))
+ 		{
+-		  break;
++		   if(SYMBOL_CLASS (sym)==LOC_LOCAL
++	              ||SYMBOL_CLASS (sym)==LOC_REGISTER
++		      ||SYMBOL_CLASS (sym)==LOC_COMPUTED)
++	           {
++			  frame = get_selected_frame (NULL) ;
++			  find_frame_sal (frame, &sal);
++			  if(block == get_frame_block (frame, 0) 
++			  && sym->line >= sal.line)
++			       sym_found = NULL;
++	           }
++		   break;
+ 		}
+ 	    }
+ 	}
+diff -BurN gdb-7.4.old/gdb/top.c gdb-7.4/gdb/top.c
+--- gdb-7.4.old/gdb/top.c	2012-07-10 15:35:07.490252600 +0800
++++ gdb-7.4/gdb/top.c	2012-07-11 12:36:33.878323500 +0800
+@@ -357,6 +357,11 @@
+   if (non_stop)
+     target_dcache_invalidate ();
+ 
++  {
++    extern void frame_garbage_collection (void);
++    frame_garbage_collection ();
++  }
++
+   return cleanup;
+ }
+ 
+diff -BurN gdb-7.4.old/gdb/windows-nat.c gdb-7.4/gdb/windows-nat.c
+--- gdb-7.4.old/gdb/windows-nat.c	2012-07-10 15:35:07.580257800 +0800
++++ gdb-7.4/gdb/windows-nat.c	2012-07-11 12:36:33.893923600 +0800
+@@ -273,9 +273,29 @@
+ static void
+ check (BOOL ok, const char *file, int line)
+ {
+-  if (!ok)
+-    printf_filtered ("error return %s:%d was %lu\n", file, line,
+-		     GetLastError ());
++  const char *msg = "Unspecified error.";
++  unsigned long err;
++  char buf[1025];
++  size_t size;
++
++  if (ok)
++    return;
++
++  err = GetLastError();
++  size = FormatMessage (FORMAT_MESSAGE_FROM_SYSTEM
++			| FORMAT_MESSAGE_IGNORE_INSERTS,
++			NULL,
++			err,
++			MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
++			buf, (sizeof (buf) - 1) / sizeof (TCHAR), NULL);
++  if (size > 0 && buf[size - 1] == '\n')
++    buf[--size] = '\0';
++  if (size > 0 && buf[size - 1] == '\r')
++    buf[--size] = '\0';
++  if (size > 0)
++    msg = buf;
++
++  printf_filtered ("error return %s:%d was: %s (%lu)\n", file, line, msg, err);
+ }
+ 
+ /* Find a thread record given a thread id.  If GET_CONTEXT is not 0,
+diff -BurN gdb-7.4.old/include/md5.h gdb-7.4/include/md5.h
+--- gdb-7.4.old/include/md5.h	2012-07-10 15:35:07.834272300 +0800
++++ gdb-7.4/include/md5.h	2012-07-11 12:36:33.909523600 +0800
+@@ -69,8 +69,12 @@
+ # endif
+ /* We have to make a guess about the integer type equivalent in size
+    to pointers which should always be correct.  */
++#ifdef _WIN64
++typedef unsigned long long md5_uintptr;
++#else
+ typedef unsigned long int md5_uintptr;
+ #endif
++#endif
+ 
+ #ifdef __cplusplus
+ extern "C" {
