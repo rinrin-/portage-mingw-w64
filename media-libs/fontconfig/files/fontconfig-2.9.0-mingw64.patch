@@ -1,0 +1,34 @@
+diff -BurN fontconfig-2.9.0.old/src/fccfg.c fontconfig-2.9.0/src/fccfg.c
+--- fontconfig-2.9.0.old/src/fccfg.c	2012-03-10 14:24:46.000000000 +0800
++++ fontconfig-2.9.0/src/fccfg.c	2012-07-14 19:55:09.211261200 +0800
+@@ -1655,14 +1655,19 @@
+        * "etc/fonts" in there as FONTCONFIG_PATH. Otherwise use the
+        * folder where the DLL is as FONTCONFIG_PATH.
+        */
+-      p = strrchr (fontconfig_path, '\\');
++      p = _mbsrchr(fontconfig_path, '\\');
+       if (p)
+       {
+ 	  *p = '\0';
+-	  p = strrchr (fontconfig_path, '\\');
++	  p = _mbsrchr (fontconfig_path, '\\');
+ 	  if (p && (FcStrCmpIgnoreCase (p + 1, "bin") == 0 ||
+ 		    FcStrCmpIgnoreCase (p + 1, "lib") == 0))
++          {
+ 	      *p = '\0';
++              p = _mbsrchr (fontconfig_path, '\\');
++              if (p && (FcStrCmpIgnoreCase (p + 1, "usr") == 0))
++                *p = '\0';
++          }
+ 	  strcat (fontconfig_path, "\\etc\\fonts");
+       }
+       else
+@@ -1779,7 +1784,7 @@
+ 		char *p;
+ 		if(!GetModuleFileName(NULL, fontconfig_path, sizeof(fontconfig_path)))
+ 			goto bail1;
+-		p = strrchr (fontconfig_path, '\\');
++		p = _mbsrchr (fontconfig_path, '\\');
+ 		if (p) *p = '\0';
+ 		strcat (fontconfig_path, "\\fonts");
+ 	}
