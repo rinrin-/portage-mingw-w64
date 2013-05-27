@@ -6,7 +6,8 @@ inherit autotools eutils
 
 DESCRIPTION="A library exposing the GNULIB implementation of the regex module"
 HOMEPAGE="http://www.mingw.org/"
-SRC_URI="mirror://sourceforge/mingw/files/MSYS/Base/regex/regex-1.20090805-2/regex-1.20090805-2-msys-1.0.13-src.tar.lzma"
+SRC_URI="mirror://sourceforge/mingw/regex-1.20090805-2-msys-1.0.13-src.tar.lzma"
+
 
 LICENSE="LGPL-2"
 SLOT="0"
