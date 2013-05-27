@@ -1,23 +1,23 @@
 # some apps depend on this, and in mingw-w64 the best we can assume is that
 # we have it
-sys-devel/automake-1.11.2
-sys-devel/libtool-2.4
+sys-devel/automake-1.12
+sys-devel/libtool-2.5
 sys-devel/autoconf-2.68
 app-shells/bash-4.1.10
 sys-apps/grep-2.6.3
 sys-apps/coreutils-8.14
-sys-apps/findutils-4.5.9
-#dev-vcs/subversion-1.7.2
+sys-apps/findutils-4.5.11
+#dev-vcs/subversion-1.7.9
 net-misc/rsync-3.0.9
-sys-devel/binutils-2.22
+sys-devel/binutils-2.23.51
 app-arch/xz-utils-5.0.2
 sys-devel/gcc-4.5.3
 sys-devel/m4-1.4.16
 app-arch/unzip-6.0
-sys-apps/diffutils-2.9
-dev-lang/perl-5.10.1
+sys-apps/diffutils-3.2
+dev-lang/perl-5.14.2
 sys-devel/bc-1.06
-sys-devel/bison-2.4.2
+sys-devel/bison-2.7
 sys-devel/flex-2.5.35
 sys-apps/groff-1.21
 sys-apps/sed-4.2.1
