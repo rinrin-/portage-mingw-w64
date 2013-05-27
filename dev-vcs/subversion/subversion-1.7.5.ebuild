@@ -12,7 +12,7 @@ inherit autotools db-use depend.apache flag-o-matic libtool multilib eutils
 
 DESCRIPTION="Advanced version control system"
 HOMEPAGE="http://subversion.apache.org/"
-SRC_URI="http://www.apache.org/dist/${PN}/${MY_P}.tar.bz2"
+SRC_URI="http://archive.apache.org/dist/${PN}/${MY_P}.tar.bz2"
 S="${WORKDIR}/${MY_P}"
 
 LICENSE="Subversion"
