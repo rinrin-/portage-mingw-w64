@@ -1,6 +1,6 @@
-# Copyright 1999-2012 Gentoo Foundation
+# Copyright 1999-2013 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/eclass/libtool.eclass,v 1.100 2012/05/06 11:42:07 grobian Exp $
+# $Header: /var/cvsroot/gentoo-x86/eclass/libtool.eclass,v 1.106 2013/05/11 11:17:58 aballier Exp $
 
 # @ECLASS: libtool.eclass
 # @MAINTAINER:
@@ -30,8 +30,6 @@ elt_patch_dir() {
 	echo "${d}"
 }
 
-DESCRIPTION="Based on the ${ECLASS} eclass"
-
 inherit multilib toolchain-funcs
 
 #
@@ -51,6 +49,15 @@ ELT_try_and_apply_patch() {
 	fi
 	printf '\nTrying %s\n' "${disp}" >> "${log}"
 
+	if [[ ! -e ${file} ]] ; then
+		echo "File not found: ${file}" >> "${log}"
+		return 1
+	fi
+
+	# Save file for permission restoration.  `patch` sometimes resets things.
+	# Ideally we'd want 'stat -c %a', but stat is highly non portable and we are
+	# guaranted to have GNU find, so use that instead.
+	local perms="$(find ${file} -maxdepth 0 -printf '%m')"
 	# We only support patchlevel of 0 - why worry if its static patches?
 	if patch -p0 --dry-run "${file}" "${patch}" >> "${log}" 2>&1 ; then
 		einfo "  Applying ${disp} ..."
@@ -60,6 +67,7 @@ ELT_try_and_apply_patch() {
 	else
 		ret=1
 	fi
+	chmod "${perms}" "${file}"
 
 	return "${ret}"
 }
@@ -134,7 +142,7 @@ elibtoolize() {
 	local deptoremove=
 	local do_shallow="no"
 	local force="false"
-	local elt_patches="install-sh ltmain portage relink max_cmd_len sed test tmp cross as-needed"
+	local elt_patches="install-sh ltmain portage relink max_cmd_len sed test tmp cross as-needed target-nm"
 
 	for x in "$@" ; do
 		case ${x} in
@@ -182,7 +190,7 @@ elibtoolize() {
 	case ${CHOST} in
 		*-aix*)     elt_patches+=" hardcode aixrtl aix-noundef" ;; #213277
 		*-darwin*)  elt_patches+=" darwin-ltconf darwin-ltmain darwin-conf" ;;
-		*-solaris*) elt_patches+=" sol2-conf" ;;
+		*-solaris*) elt_patches+=" sol2-conf sol2-ltmain" ;;
 		*-freebsd*) elt_patches+=" fbsd-conf fbsd-ltconf" ;;
 		*-hpux*)    elt_patches+=" hpux-conf deplibs hc-flag-ld hardcode hardcode-relink relink-prog no-lc" ;;
 		*-irix*)    elt_patches+=" irix-ltmain" ;;
@@ -351,6 +359,10 @@ elibtoolize() {
 						# have at least one patch succeeded.
 						ret=0
 					fi
+					;;
+				target-nm)
+					ELT_walk_patches "${d}/configure" "${p}"
+					ret=$?
 					;;
 				install-sh)
 					ELT_walk_patches "${d}/install-sh" "${p}"

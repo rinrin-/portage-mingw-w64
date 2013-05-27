@@ -1,6 +1,5 @@
-# Copyright 1999-2011 Gentoo Foundation
+# Copyright owners: Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/eclass/bash-completion-r1.eclass,v 1.2 2011/09/08 20:28:29 mgorny Exp $
 
 # @ECLASS: bash-completion-r1.eclass
 # @MAINTAINER:
@@ -19,7 +18,7 @@
 # @CODE
 
 case ${EAPI:-0} in
-	0|1|2|3|4) ;;
+	0|1|2|3|4|4-python|5|5-progress) ;;
 	*) die "EAPI ${EAPI} unsupported (yet)."
 esac
 
