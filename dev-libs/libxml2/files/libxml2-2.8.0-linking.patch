@@ -1,0 +1,101 @@
+--- configure.in
++++ configure.in
+@@ -97,7 +97,7 @@
+ dnl zlib option might change flags, so we save them initially
+ dnl
+ _cppflags="${CPPFLAGS}"
+-_ldflags="${LDFLAGS}"
++_libs="${LIBS}"
+ 
+ AC_ARG_WITH(c14n,
+ [  --with-c14n             add the Canonicalization support (on)])
+@@ -154,7 +154,7 @@
+   if test "$withval" != "no" -a "$withval" != "yes"; then
+     RDL_DIR=$withval
+     CPPFLAGS="${CPPFLAGS} -I$withval/include"
+-    LDFLAGS="${LDFLAGS} -L$withval/lib"
++    LIBS="${LIBS} -L$withval/lib"
+   fi
+ ])
+ AC_ARG_WITH(regexps,
+@@ -190,7 +190,7 @@
+   if test "$withval" != "no" -a "$withval" != "yes"; then
+     Z_DIR=$withval
+     CPPFLAGS="${CPPFLAGS} -I$withval/include"
+-    LDFLAGS="${LDFLAGS} -L$withval/lib"
++    LIBS="${LIBS} -L$withval/lib"
+   fi
+ ])
+ AC_ARG_WITH(lzma,
+@@ -198,7 +198,7 @@
+   if test "$withval" != "no" -a "$withval" != "yes"; then
+     LZMA_DIR=$withval
+     CPPFLAGS="${CPPFLAGS} -I$withval/include"
+-    LDFLAGS="${LDFLAGS} -L$withval/lib"
++    LIBS="${LIBS} -L$withval/lib"
+   fi
+ ])
+ AC_ARG_WITH(coverage,
+@@ -428,7 +428,7 @@
+ AC_SUBST(WITH_LZMA)
+ 
+ CPPFLAGS=${_cppflags}
+-LDFLAGS=${_ldflags}
++LIBS=${_libs}
+ 
+ echo Checking headers
+ 
+@@ -1365,14 +1365,14 @@
+ AC_SUBST(WITH_ICONV)
+ 
+ WITH_ICU=0
++ICU_LIBS=""
+ if test "$with_icu" != "yes" ; then
+     echo Disabling ICU support
+ else
+     ICU_CONFIG=icu-config
+     if ${ICU_CONFIG} --cflags >/dev/null 2>&1
+     then
+-        ICU_LIBS=`icu-config --ldflags`
+-        LDFLAGS="$LDFLAGS $ICU_LIBS"
++        ICU_LIBS=`${ICU_CONFIG} --ldflags`
+         WITH_ICU=1
+         echo Enabling ICU support
+     else
+@@ -1380,6 +1380,7 @@
+     fi
+ fi
+ AC_SUBST(WITH_ICU)
++AC_SUBST(ICU_LIBS)
+ 
+ WITH_ISO8859X=1
+ if test "$WITH_ICONV" != "1" ; then
+--- libxml-2.0.pc.in
++++ libxml-2.0.pc.in
+@@ -9,5 +9,5 @@
+ Description: libXML library version2.
+ Requires:
+ Libs: -L${libdir} -lxml2
+-Libs.private: @THREAD_LIBS@ @Z_LIBS@ @ICONV_LIBS@ @M_LIBS@ @WIN32_EXTRA_LIBADD@ @LIBS@
++Libs.private: @ICU_LIBS@ @THREAD_LIBS@ @Z_LIBS@ @ICONV_LIBS@ @M_LIBS@ @WIN32_EXTRA_LIBADD@ @LIBS@
+ Cflags: @XML_INCLUDEDIR@ @XML_CFLAGS@
+--- libxml-2.0-uninstalled.pc.in
++++ libxml-2.0-uninstalled.pc.in
+@@ -8,5 +8,5 @@
+ Version: @VERSION@
+ Description: libXML library version2.
+ Requires:
+-Libs: -L${libdir} -lxml2 @THREAD_LIBS@ @Z_LIBS@ @ICONV_LIBS@ @M_LIBS@ @LIBS@
++Libs: -L${libdir} -lxml2 @ICU_LIBS@ @THREAD_LIBS@ @Z_LIBS@ @ICONV_LIBS@ @M_LIBS@ @LIBS@
+ Cflags: -I${includedir} @XML_INCLUDEDIR@ @XML_CFLAGS@
+--- Makefile.am
++++ Makefile.am
+@@ -18,7 +18,7 @@
+ bin_SCRIPTS=xml2-config
+ 
+ lib_LTLIBRARIES = libxml2.la
+-libxml2_la_LIBADD = @THREAD_LIBS@ @Z_LIBS@ @LZMA_LIBS@ $(ICONV_LIBS) @M_LIBS@ @WIN32_EXTRA_LIBADD@
++libxml2_la_LIBADD = @ICU_LIBS@ @THREAD_LIBS@ @Z_LIBS@ @LZMA_LIBS@ $(ICONV_LIBS) @M_LIBS@ @WIN32_EXTRA_LIBADD@
+ 
+ if USE_VERSION_SCRIPT
+ LIBXML2_VERSION_SCRIPT = $(VERSION_SCRIPT_FLAGS)$(srcdir)/libxml2.syms
