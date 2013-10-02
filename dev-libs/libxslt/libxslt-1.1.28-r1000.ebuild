@@ -1,6 +1,6 @@
-# Copyright 1999-2011 Gentoo Foundation
+# Copyright owners: Gentoo Foundation
+#                   Arfrever Frehtes Taifersar Arahesis
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/dev-libs/libxslt/libxslt-1.1.26-r2.ebuild,v 1.7 2011/10/30 15:15:27 armin76 Exp $
 
 EAPI="3"
 PYTHON_DEPEND="python? 2"
@@ -15,54 +15,51 @@ SRC_URI="ftp://xmlsoft.org/${PN}/${P}.tar.gz"
 
 LICENSE="MIT"
 SLOT="0"
-KEYWORDS="alpha amd64 arm hppa ia64 m68k ~mips ppc ppc64 s390 sh sparc x86 ~sparc-fbsd ~x86-fbsd"
-IUSE="crypt debug static-libs"
+KEYWORDS="~amd64"
+IUSE="crypt debug python static-libs"
 
-DEPEND=">=dev-libs/libxml2-2.6.27:2
+RDEPEND=">=dev-libs/libxml2-2.8.0:2
 	crypt?  ( >=dev-libs/libgcrypt-1.1.42 )"
-RDEPEND="${DEPEND}"
+DEPEND="${RDEPEND}"
 
 pkg_setup() {
-	if use python; then
-		python_pkg_setup
-	fi
+	use python && python_pkg_setup
 }
 
 src_prepare() {
-	epatch "${FILESDIR}"/libxslt.m4-${P}.patch \
-		"${FILESDIR}"/${PN}-1.1.23-parallel-install.patch \
-		"${FILESDIR}"/${P}-undefined.patch \
-		"${FILESDIR}"/${P}-disable_static_modules.patch
+	# https://bugzilla.gnome.org/show_bug.cgi?id=684621
+	epatch "${FILESDIR}"/${PN}.m4-${PN}-1.1.26.patch
+
+	epatch "${FILESDIR}"/${PN}-1.1.26-disable_static_modules.patch
+
+	# Use python-config, not python2.7-config
+	epatch "${FILESDIR}"/${PN}-1.1.27-python-config.patch
 
 	# Python bindings are built/tested/installed manually.
-	sed -e "s/@PYTHON_SUBDIR@//" -i Makefile.am || die "sed failed"
-
-	# Fix generate-id() to not expose object addresses, bug #358615
-	epatch "${FILESDIR}/${P}-id-generation.patch"
-	
+	sed -i -e 's/$(PYTHON_SUBDIR)//' Makefile.am || die
 	epatch "${FILESDIR}/${P}-mingw-special.patch"
-	epatch "${FILESDIR}/${P}-mingw-testthread.patch"
 
 	eautoreconf
-	epunt_cxx
+	# If eautoreconf'd with new autoconf, then epunt_cxx is not necessary
+	# and it is propably otherwise too if upstream generated with new
+	# autoconf
+#	epunt_cxx
 }
 
 src_configure() {
 	# libgcrypt is missing pkg-config file, so fixing cross-compile
 	# here. see bug 267503.
-	if tc-is-cross-compiler; then
-		export LIBGCRYPT_CONFIG="${SYSROOT}/usr/bin/libgcrypt-config"
-	fi
+	tc-is-cross-compiler && \
+		export LIBGCRYPT_CONFIG="${SYSROOT}"/usr/bin/libgcrypt-config
 
 	econf \
-		--disable-dependency-tracking \
-		--with-html-dir=${EPREFIX}/usr/share/doc/${PF} \
+		$(use_enable static-libs static) \
+		--with-html-dir="${EPREFIX}"/usr/share/doc/${PF} \
 		--with-html-subdir=html \
 		$(use_with crypt crypto) \
 		$(use_with python) \
 		$(use_with debug) \
-		$(use_with debug mem-debug) \
-		$(use_enable static-libs static)
+		$(use_with debug mem-debug)
 }
 
 src_compile() {
@@ -100,28 +97,25 @@ src_install() {
 				install
 		}
 		python_execute_function -s --source-dir python installation
-
 		python_clean_installation_image
-	fi
 
-	mv -vf "${ED}"/usr/share/doc/${PN}-python-${PV} \
-		"${ED}"/usr/share/doc/${PF}/python
+		mv "${ED}"/usr/share/doc/${PN}-python-${PV} "${ED}"/usr/share/doc/${PF}/python
+	fi
 	dodoc AUTHORS ChangeLog FEATURES NEWS README TODO || die
+
 
 	if ! use static-libs; then
 		# Remove useless .la files
 		find "${ED}" -name '*.la' -exec rm -f {} + || die "la file removal failed"
 	fi
+
+	prune_libtool_files --modules
 }
 
 pkg_postinst() {
-	if use python; then
-		python_mod_optimize libxslt.py
-	fi
+	use python && python_mod_optimize ${PN}.py
 }
 
 pkg_postrm() {
-	if use python; then
-		python_mod_cleanup libxslt.py
-	fi
+	use python && python_mod_cleanup ${PN}.py
 }
