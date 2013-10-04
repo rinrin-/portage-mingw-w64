@@ -1,0 +1,12 @@
+diff -Nur regex-20090805.old/configure.ac regex-20090805/configure.ac
+--- regex-20090805.old/configure.ac	2009-08-06 10:12:58.000000000 +0800
++++ regex-20090805/configure.ac	2013-10-04 20:20:17.964119700 +0800
+@@ -3,7 +3,7 @@
+ AC_CONFIG_SRCDIR([lib/regex.c])
+ AC_CONFIG_AUX_DIR([build-aux])
+ AC_CONFIG_MACRO_DIR([m4])
+-AM_INIT_AUTOMAKE([1.11 silent-rules dist-xz -Wall -Werror foreign])
++AM_INIT_AUTOMAKE([1.11 silent-rules dist-xz -Wall foreign])
+ AC_CONFIG_HEADERS([config.h])
+ 
+ AC_PROG_CC

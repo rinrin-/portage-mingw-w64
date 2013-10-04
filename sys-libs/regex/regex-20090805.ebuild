@@ -25,6 +25,7 @@ src_unpack() {
 }
 
 src_prepare() {
+    epatch "${FILESDIR}"/${PN}-20090805-no-autoconf-warn.patch
 	eautoreconf
 }
 
