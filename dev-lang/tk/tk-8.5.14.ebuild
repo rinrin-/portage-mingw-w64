@@ -1,6 +1,6 @@
-# Copyright 1999-2011 Gentoo Foundation
+# Copyright 1999-2013 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/dev-lang/tk/tk-8.5.10.ebuild,v 1.1 2011/10/04 17:08:05 jlec Exp $
+# $Header: /var/cvsroot/gentoo-x86/dev-lang/tk/tk-8.5.14.ebuild,v 1.1 2013/05/02 10:37:42 jlec Exp $
 
 EAPI="3"
 
@@ -12,7 +12,7 @@ DESCRIPTION="Tk Widget Set"
 HOMEPAGE="http://www.tcl.tk/"
 SRC_URI="mirror://sourceforge/tcl/${MY_P}-src.tar.gz"
 
-LICENSE="BSD"
+LICENSE="tcltk"
 SLOT="0"
 KEYWORDS="~alpha ~amd64 ~arm ~hppa ~ia64 ~mips ~ppc ~ppc64 ~s390 ~sh ~sparc ~x86 ~x86-fbsd ~amd64-linux ~x86-linux ~ppc-macos ~x64-macos ~x86-macos ~sparc-solaris ~sparc64-solaris ~x64-solaris ~x86-solaris"
 IUSE="debug threads"
@@ -20,28 +20,46 @@ IUSE="debug threads"
 RDEPEND="~dev-lang/tcl-${PV}"
 DEPEND="${RDEPEND}"
 
-S="${WORKDIR}/${MY_P}"
+SPARENT="${WORKDIR}/${MY_P}"
+S="${SPARENT}"
 
 src_prepare() {
-	epatch "${FILESDIR}"/${PN}-8.4.11-multilib.patch
+	epatch \
+		"${FILESDIR}"/${PN}-8.5.11-fedora-xft.patch \
+		"${FILESDIR}"/${PN}-8.5.13-multilib.patch
 
 	epatch "${FILESDIR}"/${PN}-8.4.15-aqua.patch
 	eprefixify unix/Makefile.in
 
 	# Bug 125971
-	epatch "${FILESDIR}"/${PN}-8.5_alpha6-tclm4-soname.patch
+	epatch "${FILESDIR}"/${P}-conf.patch
 
     if [[ ${CHOST} == *-mingw* ]]; then
-        epatch "${FILESDIR}"/${P}-mingw-proper-implibs-for-shared-build.patch
-        epatch "${FILESDIR}"/${P}-mingw-fix-forbidden-colon-in-paths.patch
-        epatch "${FILESDIR}"/${P}-mingw-install-man.patch
-        epatch "${FILESDIR}"/${P}-mingw-tcl-library.patch
-        epatch "${FILESDIR}"/${P}-mingw-multilib.patch
+        epatch "${FILESDIR}"/${PN}-8.5.10-mingw-proper-implibs-for-shared-build.patch
+        epatch "${FILESDIR}"/${PN}-8.5.10-mingw-fix-forbidden-colon-in-paths.patch
+        epatch "${FILESDIR}"/${PN}-8.5.10-mingw-install-man.patch
+        epatch "${FILESDIR}"/${PN}-8.5.10-mingw-tcl-library.patch
+        epatch "${FILESDIR}"/${PN}-8.5.10-mingw-multilib.patch
+	epatch "${FILESDIR}"/${PN}-8.5.14-mingw-seh-def-fix.patch
         cd "${S}"/win
         eautoreconf
     else
-    	sed -i 's/FT_New_Face/XftFontOpen/g' unix/configure.in || die
+	# Bug 354067 : the same applies to tcl, since the patch is about tcl.m4, just
+	# copy the tcl patch
+	epatch "${FILESDIR}"/tcl-8.5.9-gentoo-fbsd.patch
+
+	# Make sure we use the right pkg-config, and link against fontconfig
+	# (since the code base uses Fc* functions).
 	    cd "${S}"/unix
+	sed \
+		-e 's/FT_New_Face/XftFontOpen/g' \
+		-e "s:\<pkg-config\>:$(tc-getPKG_CONFIG):" \
+		-e 's:xft freetype2:xft freetype2 fontconfig:' \
+		-i configure.in || die
+	rm -f configure || die
+
+	tc-export CC
+
 	    eautoreconf
     fi
 }
@@ -84,8 +102,8 @@ src_test() {
 
 src_install() {
 	#short version number
-	local v1
-	v1=${PV%.*}
+	local v1=$(get_version_component_range 1-2)
+	local mylibdir=$(get_libdir)
 
     if [[ ${CHOST} == *-mingw* ]]; then
         cd "${S}"/win
@@ -138,12 +156,17 @@ src_install() {
 	rm -f "${ED}"/usr/${mylibdir}/tk${v1}/include/generic/tkPlatDecls.h
 
 	# install symlink for libraries
-	if [[ ${CHOST} != *-mingw* ]]; then
-	    #dosym libtk${v1}.a /usr/${mylibdir}/libtk.a
-	    dosym libtk${v1}$(get_libname) /usr/${mylibdir}/libtk$(get_libname) || die
-	    dosym wish${v1} /usr/bin/wish || die
+	if [[ ${CHOST} == *-mingw* ]]; then
+	    #dosym libtk85.a /usr/${mylibdir}/libtk.a
+	    dosym libtk85.dll.a /usr/${mylibdir}/libtk.dll.a || die
+	    dosym wish85.exe /usr/bin/wish.exe || die
+	    dosym libtkstub85.a /usr/${mylibdir}/libtkstub.a || die
+        else
+	dosym libtk${v1}$(get_libname) /usr/${mylibdir}/libtk$(get_libname)
+	dosym libtkstub${v1}.a /usr/${mylibdir}/libtkstub.a
+
+	dosym wish${v1} /usr/bin/wish
 	fi
-	dosym libtkstub${v1}.a /usr/${mylibdir}/libtkstub.a || die
 
     if [[ ${CHOST} == *-mingw* ]]; then
         rm -fr "${ED}"/usr/lib
