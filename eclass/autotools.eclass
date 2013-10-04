@@ -150,11 +150,13 @@ unset _automake_atom _autoconf_atom
 eautoreconf() {
 	local x g multitop
 
-	if [[ -z ${AT_TOPLEVEL_EAUTORECONF} ]] ; then
-		AT_TOPLEVEL_EAUTORECONF="yes"
-		multitop="yes"
-		multijob_init
-	fi
+    # disable parallel running autoreconf temporarily
+    # because of fifo implementation bug in cygwin
+	#if [[ -z ${AT_TOPLEVEL_EAUTORECONF} ]] ; then
+	#	AT_TOPLEVEL_EAUTORECONF="yes"
+	#	multitop="yes"
+	#	multijob_init
+	#fi
 
 	if [[ -z ${AT_NO_RECURSIVE} ]] ; then
 		# Take care of subdirs
@@ -163,7 +165,8 @@ eautoreconf() {
 				pushd "${x}" >/dev/null
 				if [[ -z ${PAST_TOPLEVEL_EAUTORECONF} ]] ; then
 					PAST_TOPLEVEL_EAUTORECONF="yes" AT_NOELIBTOOLIZE="yes" \
-						multijob_child_init eautoreconf || die
+						eautoreconf || die
+						#multijob_child_init eautoreconf || die
 				else
 					# Avoid unsafe nested multijob_finish_one for bug #426512.
 					AT_NOELIBTOOLIZE="yes" eautoreconf || die
@@ -221,10 +224,10 @@ eautoreconf() {
 		S=${PWD} elibtoolize --force
 	fi
 
-	if [[ -n ${multitop} ]] ; then
-		unset AT_TOPLEVEL_EAUTORECONF
-		multijob_finish || die
-	fi
+	#if [[ -n ${multitop} ]] ; then
+	#	unset AT_TOPLEVEL_EAUTORECONF
+	#	multijob_finish || die
+	#fi
 
 	return 0
 }
