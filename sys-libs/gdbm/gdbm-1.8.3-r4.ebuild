@@ -29,7 +29,7 @@ src_unpack() {
 	eautoreconf
 	#elibtoolize
 	append-lfs-flags
-	append-ldflags -no-undefined
+	# append-ldflags -no-undefined
 }
 
 src_compile() {
