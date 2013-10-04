@@ -1,0 +1,345 @@
+diff -Nur tcl8.5.14.old/win/tclWin32Dll.c tcl8.5.14/win/tclWin32Dll.c
+--- tcl8.5.14.old/win/tclWin32Dll.c	2013-03-11 19:58:22.000000000 +0800
++++ tcl8.5.14/win/tclWin32Dll.c	2013-10-03 21:14:41.253057300 +0800
+@@ -50,17 +50,17 @@
+ /*
+  * Unlike Borland and Microsoft, we don't register exception handlers by
+  * pushing registration records onto the runtime stack. Instead, we register
+- * them by creating an EXCEPTION_REGISTRATION within the activation record.
++ * them by creating an TCL_EXCEPTION_REGISTRATION within the activation record.
+  */
+ 
+-typedef struct EXCEPTION_REGISTRATION {
+-    struct EXCEPTION_REGISTRATION *link;
++typedef struct TCL_EXCEPTION_REGISTRATION {
++    struct TCL_EXCEPTION_REGISTRATION *link;
+     EXCEPTION_DISPOSITION (*handler)(
+ 	    struct _EXCEPTION_RECORD*, void*, struct _CONTEXT*, void*);
+     void *ebp;
+     void *esp;
+     int status;
+-} EXCEPTION_REGISTRATION;
++} TCL_EXCEPTION_REGISTRATION;
+ #endif
+ 
+ /*
+@@ -302,7 +302,7 @@
+     LPVOID reserved)		/* Not used. */
+ {
+ #if defined(HAVE_NO_SEH) && !defined(_WIN64)
+-    EXCEPTION_REGISTRATION registration;
++    TCL_EXCEPTION_REGISTRATION registration;
+ #endif
+ 
+     switch (reason) {
+@@ -321,7 +321,7 @@
+ 	__asm__ __volatile__ (
+ 
+ 	    /*
+-	     * Construct an EXCEPTION_REGISTRATION to protect the call to
++	     * Construct an TCL_EXCEPTION_REGISTRATION to protect the call to
+ 	     * Tcl_Finalize
+ 	     */
+ 
+@@ -335,7 +335,7 @@
+ 	    "movl	%[error],	0x10(%%edx)"	"\n\t" /* status */
+ 
+ 	    /*
+-	     * Link the EXCEPTION_REGISTRATION on the chain
++	     * Link the TCL_EXCEPTION_REGISTRATION on the chain
+ 	     */
+ 
+ 	    "movl	%%edx,		%%fs:0"		"\n\t"
+@@ -347,7 +347,7 @@
+ 	    "call	_Tcl_Finalize"			"\n\t"
+ 
+ 	    /*
+-	     * Come here on a normal exit. Recover the EXCEPTION_REGISTRATION
++	     * Come here on a normal exit. Recover the TCL_EXCEPTION_REGISTRATION
+ 	     * and store a TCL_OK status
+ 	     */
+ 
+@@ -357,7 +357,7 @@
+ 	    "jmp	2f"				"\n"
+ 
+ 	    /*
+-	     * Come here on an exception. Get the EXCEPTION_REGISTRATION that
++	     * Come here on an exception. Get the TCL_EXCEPTION_REGISTRATION that
+ 	     * we previously put on the chain.
+ 	     */
+ 
+@@ -368,7 +368,7 @@
+ 
+ 	    /*
+ 	     * Come here however we exited. Restore context from the
+-	     * EXCEPTION_REGISTRATION in case the stack is unbalanced.
++	     * TCL_EXCEPTION_REGISTRATION in case the stack is unbalanced.
+ 	     */
+ 
+ 	    "2:"					"\t"
+@@ -1086,7 +1086,7 @@
+ 
+ #   else
+ 
+-    EXCEPTION_REGISTRATION registration;
++    TCL_EXCEPTION_REGISTRATION registration;
+ 
+     /*
+      * Execute the CPUID instruction with the given index, and store results
+@@ -1095,7 +1095,7 @@
+ 
+     __asm__ __volatile__(
+ 	/*
+-	 * Construct an EXCEPTION_REGISTRATION to protect the CPUID
++	 * Construct an TCL_EXCEPTION_REGISTRATION to protect the CPUID
+ 	 * instruction (early 486's don't have CPUID)
+ 	 */
+ 
+@@ -1109,7 +1109,7 @@
+ 	"movl	%[error],	0x10(%%edx)"	"\n\t" /* status */
+ 
+ 	/*
+-	 * Link the EXCEPTION_REGISTRATION on the chain
++	 * Link the TCL_EXCEPTION_REGISTRATION on the chain
+ 	 */
+ 
+ 	"movl	%%edx,		%%fs:0"		"\n\t"
+@@ -1128,7 +1128,7 @@
+ 	"movl	%%edx,		0xc(%%edi)"	"\n\t"
+ 
+ 	/*
+-	 * Come here on a normal exit. Recover the EXCEPTION_REGISTRATION and
++	 * Come here on a normal exit. Recover the TCL_EXCEPTION_REGISTRATION and
+ 	 * store a TCL_OK status.
+ 	 */
+ 
+@@ -1138,7 +1138,7 @@
+ 	"jmp	2f"				"\n"
+ 
+ 	/*
+-	 * Come here on an exception. Get the EXCEPTION_REGISTRATION that we
++	 * Come here on an exception. Get the TCL_EXCEPTION_REGISTRATION that we
+ 	 * previously put on the chain.
+ 	 */
+ 
+@@ -1148,7 +1148,7 @@
+ 
+ 	/*
+ 	 * Come here however we exited. Restore context from the
+-	 * EXCEPTION_REGISTRATION in case the stack is unbalanced.
++	 * TCL_EXCEPTION_REGISTRATION in case the stack is unbalanced.
+ 	 */
+ 
+ 	"2:"					"\t"
+diff -Nur tcl8.5.14.old/win/tclWinChan.c tcl8.5.14/win/tclWinChan.c
+--- tcl8.5.14.old/win/tclWinChan.c	2013-03-11 19:58:22.000000000 +0800
++++ tcl8.5.14/win/tclWinChan.c	2013-10-03 21:14:57.750675600 +0800
+@@ -124,17 +124,17 @@
+ /*
+  * Unlike Borland and Microsoft, we don't register exception handlers by
+  * pushing registration records onto the runtime stack. Instead, we register
+- * them by creating an EXCEPTION_REGISTRATION within the activation record.
++ * them by creating an TCL_EXCEPTION_REGISTRATION within the activation record.
+  */
+ 
+-typedef struct EXCEPTION_REGISTRATION {
+-    struct EXCEPTION_REGISTRATION* link;
++typedef struct TCL_EXCEPTION_REGISTRATION {
++    struct TCL_EXCEPTION_REGISTRATION* link;
+     EXCEPTION_DISPOSITION (*handler)(
+ 	    struct _EXCEPTION_RECORD*, void*, struct _CONTEXT*, void*);
+     void* ebp;
+     void* esp;
+     int status;
+-} EXCEPTION_REGISTRATION;
++} TCL_EXCEPTION_REGISTRATION;
+ #endif
+ 
+ /*
+@@ -1027,7 +1027,7 @@
+ 				 * TCL_WRITABLE to indicate file mode. */
+ {
+ #if defined(HAVE_NO_SEH) && !defined(_WIN64)
+-    EXCEPTION_REGISTRATION registration;
++    TCL_EXCEPTION_REGISTRATION registration;
+ #endif
+     char channelName[16 + TCL_INTEGER_SPACE];
+     Tcl_Channel channel = NULL;
+@@ -1108,7 +1108,7 @@
+ 	    "movl       %[dupedHandle], %%ebx"          "\n\t"
+ 
+ 	    /*
+-	     * Construct an EXCEPTION_REGISTRATION to protect the call to
++	     * Construct an TCL_EXCEPTION_REGISTRATION to protect the call to
+ 	     * CloseHandle.
+ 	     */
+ 
+@@ -1122,7 +1122,7 @@
+ 	    "movl       $0,             0x10(%%edx)"    "\n\t" /* status */
+ 
+ 	    /*
+-	     * Link the EXCEPTION_REGISTRATION on the chain.
++	     * Link the TCL_EXCEPTION_REGISTRATION on the chain.
+ 	     */
+ 
+ 	    "movl       %%edx,          %%fs:0"         "\n\t"
+@@ -1135,7 +1135,7 @@
+ 	    "call       _CloseHandle@4"                 "\n\t"
+ 
+ 	    /*
+-	     * Come here on normal exit. Recover the EXCEPTION_REGISTRATION
++	     * Come here on normal exit. Recover the TCL_EXCEPTION_REGISTRATION
+ 	     * and put a TRUE status return into it.
+ 	     */
+ 
+@@ -1145,7 +1145,7 @@
+ 	    "jmp        2f"                             "\n"
+ 
+ 	    /*
+-	     * Come here on an exception. Recover the EXCEPTION_REGISTRATION
++	     * Come here on an exception. Recover the TCL_EXCEPTION_REGISTRATION
+ 	     */
+ 
+ 	    "1:"                                        "\t"
+@@ -1154,7 +1154,7 @@
+ 
+ 	    /*
+ 	     * Come here however we exited. Restore context from the
+-	     * EXCEPTION_REGISTRATION in case the stack is unbalanced.
++	     * TCL_EXCEPTION_REGISTRATION in case the stack is unbalanced.
+ 	     */
+ 
+ 	    "2:"                                        "\t"
+diff -Nur tcl8.5.14.old/win/tclWinFCmd.c tcl8.5.14/win/tclWinFCmd.c
+--- tcl8.5.14.old/win/tclWinFCmd.c	2013-03-11 19:58:22.000000000 +0800
++++ tcl8.5.14/win/tclWinFCmd.c	2013-10-03 21:15:13.475324700 +0800
+@@ -72,17 +72,17 @@
+ /*
+  * Unlike Borland and Microsoft, we don't register exception handlers by
+  * pushing registration records onto the runtime stack. Instead, we register
+- * them by creating an EXCEPTION_REGISTRATION within the activation record.
++ * them by creating an TCL_EXCEPTION_REGISTRATION within the activation record.
+  */
+ 
+-typedef struct EXCEPTION_REGISTRATION {
+-    struct EXCEPTION_REGISTRATION *link;
++typedef struct TCL_EXCEPTION_REGISTRATION {
++    struct TCL_EXCEPTION_REGISTRATION *link;
+     EXCEPTION_DISPOSITION (*handler)(
+ 	    struct _EXCEPTION_RECORD *, void *, struct _CONTEXT *, void *);
+     void *ebp;
+     void *esp;
+     int status;
+-} EXCEPTION_REGISTRATION;
++} TCL_EXCEPTION_REGISTRATION;
+ 
+ #endif
+ 
+@@ -176,7 +176,7 @@
+ 				 * (native). */
+ {
+ #if defined(HAVE_NO_SEH) && !defined(_WIN64)
+-    EXCEPTION_REGISTRATION registration;
++    TCL_EXCEPTION_REGISTRATION registration;
+ #endif
+     DWORD srcAttr, dstAttr;
+     int retval = -1;
+@@ -213,7 +213,7 @@
+ 	"movl	    %[nativeSrc],   %%ecx"	    "\n\t"
+ 
+ 	/*
+-	 * Construct an EXCEPTION_REGISTRATION to protect the call to
++	 * Construct an TCL_EXCEPTION_REGISTRATION to protect the call to
+ 	 * MoveFile.
+ 	 */
+ 
+@@ -227,7 +227,7 @@
+ 	"movl	    $0,		    0x10(%%edx)"    "\n\t" /* status */
+ 
+ 	/*
+-	 * Link the EXCEPTION_REGISTRATION on the chain.
++	 * Link the TCL_EXCEPTION_REGISTRATION on the chain.
+ 	 */
+ 
+ 	"movl	    %%edx,	    %%fs:0"	    "\n\t"
+@@ -242,7 +242,7 @@
+ 	"call	    *%%eax"			    "\n\t"
+ 
+ 	/*
+-	 * Come here on normal exit. Recover the EXCEPTION_REGISTRATION and
++	 * Come here on normal exit. Recover the TCL_EXCEPTION_REGISTRATION and
+ 	 * put the status return from MoveFile into it.
+ 	 */
+ 
+@@ -251,7 +251,7 @@
+ 	"jmp	    2f"				    "\n"
+ 
+ 	/*
+-	 * Come here on an exception. Recover the EXCEPTION_REGISTRATION
++	 * Come here on an exception. Recover the TCL_EXCEPTION_REGISTRATION
+ 	 */
+ 
+ 	"1:"					    "\t"
+@@ -260,7 +260,7 @@
+ 
+ 	/*
+ 	 * Come here however we exited. Restore context from the
+-	 * EXCEPTION_REGISTRATION in case the stack is unbalanced.
++	 * TCL_EXCEPTION_REGISTRATION in case the stack is unbalanced.
+ 	 */
+ 
+ 	"2:"					    "\t"
+@@ -568,7 +568,7 @@
+     CONST TCHAR *nativeDst)	/* Pathname of file to copy to (native). */
+ {
+ #if defined(HAVE_NO_SEH) && !defined(_WIN64)
+-    EXCEPTION_REGISTRATION registration;
++    TCL_EXCEPTION_REGISTRATION registration;
+ #endif
+     int retval = -1;
+ 
+@@ -605,7 +605,7 @@
+ 	"movl	    %[nativeSrc],   %%ecx"	    "\n\t"
+ 
+ 	/*
+-	 * Construct an EXCEPTION_REGISTRATION to protect the call to
++	 * Construct an TCL_EXCEPTION_REGISTRATION to protect the call to
+ 	 * CopyFile.
+ 	 */
+ 
+@@ -619,7 +619,7 @@
+ 	"movl	    $0,		    0x10(%%edx)"    "\n\t" /* status */
+ 
+ 	/*
+-	 * Link the EXCEPTION_REGISTRATION on the chain.
++	 * Link the TCL_EXCEPTION_REGISTRATION on the chain.
+ 	 */
+ 
+ 	"movl	    %%edx,	    %%fs:0"	    "\n\t"
+@@ -635,7 +635,7 @@
+ 	"call	    *%%eax"			    "\n\t"
+ 
+ 	/*
+-	 * Come here on normal exit. Recover the EXCEPTION_REGISTRATION and
++	 * Come here on normal exit. Recover the TCL_EXCEPTION_REGISTRATION and
+ 	 * put the status return from CopyFile into it.
+ 	 */
+ 
+@@ -644,7 +644,7 @@
+ 	"jmp	    2f"				    "\n"
+ 
+ 	/*
+-	 * Come here on an exception. Recover the EXCEPTION_REGISTRATION
++	 * Come here on an exception. Recover the TCL_EXCEPTION_REGISTRATION
+ 	 */
+ 
+ 	"1:"					    "\t"
+@@ -653,7 +653,7 @@
+ 
+ 	/*
+ 	 * Come here however we exited. Restore context from the
+-	 * EXCEPTION_REGISTRATION in case the stack is unbalanced.
++	 * TCL_EXCEPTION_REGISTRATION in case the stack is unbalanced.
+ 	 */
+ 
+ 	"2:"					    "\t"

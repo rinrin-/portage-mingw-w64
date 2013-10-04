@@ -1,10 +1,10 @@
-# Copyright 1999-2012 Gentoo Foundation
+# Copyright 1999-2013 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/dev-lang/tcl/tcl-8.5.10.ebuild,v 1.3 2012/01/04 20:44:37 ranger Exp $
+# $Header: /var/cvsroot/gentoo-x86/dev-lang/tcl/tcl-8.5.14.ebuild,v 1.1 2013/05/01 11:09:55 jlec Exp $
 
 EAPI="3"
 
-inherit autotools eutils flag-o-matic multilib toolchain-funcs
+inherit autotools eutils flag-o-matic multilib toolchain-funcs versionator
 
 MY_P="${PN}${PV/_beta/b}"
 
@@ -12,61 +12,65 @@ DESCRIPTION="Tool Command Language"
 HOMEPAGE="http://www.tcl.tk/"
 SRC_URI="mirror://sourceforge/tcl/${MY_P}-src.tar.gz"
 
-LICENSE="BSD"
+LICENSE="tcltk"
 SLOT="0"
-KEYWORDS="~alpha ~amd64 ~arm ~hppa ~ia64 ~m68k ~mips ppc ~ppc64 ~s390 ~sh ~sparc ~x86 ~sparc-fbsd ~x86-fbsd ~x86-interix ~amd64-linux ~x86-linux ~ppc-macos ~x64-macos ~x86-macos ~m68k-mint ~sparc-solaris ~sparc64-solaris ~x86-solaris"
+KEYWORDS="~alpha ~amd64 ~arm ~hppa ~ia64 ~m68k ~mips ~ppc ~ppc64 ~s390 ~sh ~sparc ~x86 ~amd64-fbsd ~sparc-fbsd ~x86-fbsd ~x86-interix ~amd64-linux ~x86-linux ~ppc-macos ~x64-macos ~x86-macos ~m68k-mint ~sparc-solaris ~sparc64-solaris ~x86-solaris"
 IUSE="debug threads"
 
-S="${WORKDIR}/${MY_P}"
+SPARENT="${WORKDIR}/${MY_P}"
+S="${SPARENT}"
 
 pkg_setup() {
 	if use threads ; then
-		ewarn ""
+		echo
 		ewarn "PLEASE NOTE: You are compiling ${P} with"
 		ewarn "threading enabled."
 		ewarn "Threading is not supported by all applications"
 		ewarn "that compile against tcl. You use threading at"
 		ewarn "your own discretion."
-		ewarn ""
+		echo
 	fi
 }
 
 src_prepare() {
-	epatch "${FILESDIR}"/${PN}-8.5_alpha6-multilib.patch
+	epatch "${FILESDIR}"/${PN}-8.5.13-multilib.patch
 
 	# Bug 125971
-	epatch "${FILESDIR}"/${PN}-8.5_alpha6-tclm4-soname.patch
+	epatch "${FILESDIR}"/${P}-conf.patch
 
 	# Bug 354067
 	epatch "${FILESDIR}"/${PN}-8.5.9-gentoo-fbsd.patch
 
+	# workaround stack check issues, bug #280934
+	use hppa && append-cflags "-DTCL_NO_STACK_CHECK=1"
+
+	tc-export CC
+		
     if [[ ${CHOST} == *-mingw* ]]; then
-        epatch "${FILESDIR}"/${P}-mingw-proper-implibs-for-shared-build.patch
-        epatch "${FILESDIR}"/${P}-mingw-fix-forbidden-colon-in-paths.patch
-        epatch "${FILESDIR}"/${P}-mingw-install-man.patch
-        epatch "${FILESDIR}"/${P}-mingw-multilib.patch
+        epatch "${FILESDIR}"/${PN}-8.5.14-mingw-proper-implibs-for-shared-build.patch
+        epatch "${FILESDIR}"/${PN}-8.5.10-mingw-fix-forbidden-colon-in-paths.patch
+        epatch "${FILESDIR}"/${PN}-8.5.10-mingw-install-man.patch
+        epatch "${FILESDIR}"/${PN}-8.5.10-mingw-multilib.patch
+	epatch "${FILESDIR}"/${PN}-8.5.14-mingw-seh-def-fix.patch
         cd "${S}"/win
-        eautoreconf
     else
     	cd "${S}"/unix
-	    eautoreconf
     fi
+	sed \
+		-e 's:-O[2s]\?::g' \
+		-i tcl.m4 || die
+		
+	eautoreconf
+	
 }
 
 src_configure() {
-	# workaround stack check issues, bug #280934
-	if use hppa; then
-		append-cflags "-DTCL_NO_STACK_CHECK=1"
-	fi
-
-	tc-export CC
 
     if [[ ${CHOST} == *-mingw* ]]; then
         cd "${S}"/win
     else
 	    cd "${S}"/unix
-	fi
-	
+	fi	
 	econf \
 		$(use_enable threads) \
 		$(use_enable debug symbols)
@@ -93,8 +97,8 @@ src_test() {
 
 src_install() {
 	#short version number
-	local v1
-	v1=${PV%.*}
+	local v1=$(get_version_component_range 1-2)
+	local mylibdir=$(get_libdir)
 
     if [[ ${CHOST} == *-mingw* ]]; then
         cd "${S}"/win
@@ -138,17 +142,20 @@ src_install() {
 	    doins "${S}"/unix/*.h || die
 	fi
 	insinto /usr/${mylibdir}/tcl${v1}/include/generic
-	doins "${S}"/generic/*.h || die
-	rm -f "${ED}"/usr/${mylibdir}/tcl${v1}/include/generic/tcl.h
-	rm -f "${ED}"/usr/${mylibdir}/tcl${v1}/include/generic/tclDecls.h
-	rm -f "${ED}"/usr/${mylibdir}/tcl${v1}/include/generic/tclPlatDecls.h
+	doins "${SPARENT}"/generic/*.h
+	rm -f "${ED}"/usr/${mylibdir}/tcl${v1}/include/generic/{tcl,tclDecls,tclPlatDecls}.h || die
 
 	# install symlink for libraries
-	if [[ ${CHOST} != *-mingw* ]]; then
-	    dosym libtcl${v1}$(get_libname) /usr/${mylibdir}/libtcl$(get_libname) || die
-	    dosym tclsh${v1} /usr/bin/tclsh || die
+	if [[ ${CHOST} == *-mingw* ]]; then
+	dosym libtcl85.dll.a /usr/${mylibdir}/libtcl.dll.a
+	dosym libtclstub85.a /usr/${mylibdir}/libtclstub.a
+	dosym tclsh85.exe /usr/bin/tclsh.exe
+	else
+	dosym libtcl${v1}$(get_libname) /usr/${mylibdir}/libtcl$(get_libname)
+	dosym libtclstub${v1}.a /usr/${mylibdir}/libtclstub.a
+	dosym tclsh${v1} /usr/bin/tclsh
 	fi
-	dosym libtclstub${v1}.a /usr/${mylibdir}/libtclstub.a || die
+
 
 	cd "${S}"
 	dodoc ChangeLog* README changes || die

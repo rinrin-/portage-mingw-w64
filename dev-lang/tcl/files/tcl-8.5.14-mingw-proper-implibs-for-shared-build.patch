@@ -1,0 +1,63 @@
+diff -Nur tcl8.5.14.old/win/Makefile.in tcl8.5.14/win/Makefile.in
+--- tcl8.5.14.old/win/Makefile.in	2013-04-02 02:36:36.000000000 +0800
++++ tcl8.5.14/win/Makefile.in	2013-10-03 21:10:56.951195100 +0800
+@@ -129,8 +129,10 @@
+ TCL_DLL_FILE		= @TCL_DLL_FILE@
+ TCL_LIB_FILE		= @TCL_LIB_FILE@
+ DDE_DLL_FILE		= tcldde$(DDEVER)${DLLSUFFIX}
++DDE_IMPLIB_FILE		= libtcldde$(DDEVER)${DLLSUFFIX}${LIBSUFFIX}
+ DDE_LIB_FILE		= tcldde$(DDEVER)${LIBSUFFIX}
+ REG_DLL_FILE		= tclreg$(REGVER)${DLLSUFFIX}
++REG_IMPLIB_FILE		= libtclreg$(REGVER)${DLLSUFFIX}${LIBSUFFIX}
+ REG_LIB_FILE		= tclreg$(REGVER)${LIBSUFFIX}
+ PIPE_DLL_FILE		= tclpip$(VER)${DLLSUFFIX}
+ 
+@@ -590,6 +592,10 @@
+ 	    $(COPY) $(DDE_DLL_FILE) $(LIB_INSTALL_DIR)/dde$(DDEDOTVER); \
+ 	    $(COPY) $(ROOT_DIR)/library/dde/pkgIndex.tcl \
+ 		$(LIB_INSTALL_DIR)/dde$(DDEDOTVER); \
++		if [ -f $(DDE_IMPLIB_FILE) ]; then \
++		echo installing $(DDE_IMPLIB_FILE); \
++		$(COPY) $(DDE_IMPLIB_FILE) $(LIB_INSTALL_DIR); \
++		fi \
+ 	    fi
+ 	@if [ -f $(DDE_LIB_FILE) ]; then \
+ 	    echo installing $(DDE_LIB_FILE); \
+@@ -600,6 +606,10 @@
+ 	    $(COPY) $(REG_DLL_FILE) $(LIB_INSTALL_DIR)/reg$(REGDOTVER); \
+ 	    $(COPY) $(ROOT_DIR)/library/reg/pkgIndex.tcl \
+ 		$(LIB_INSTALL_DIR)/reg$(REGDOTVER); \
++		if [ -f $(REG_IMPLIB_FILE) ]; then \
++		echo installing $(REG_IMPLIB_FILE); \
++		$(COPY) $(REG_IMPLIB_FILE) $(LIB_INSTALL_DIR); \
++		fi \
+ 	    fi
+ 	@if [ -f $(REG_LIB_FILE) ]; then \
+ 	    echo installing $(REG_LIB_FILE); \
+diff -Nur tcl8.5.14.old/win/configure.in tcl8.5.14/win/configure.in
+--- tcl8.5.14.old/win/configure.in	2013-04-02 02:36:36.000000000 +0800
++++ tcl8.5.14/win/configure.in	2013-10-03 21:06:41.664788900 +0800
+@@ -190,7 +190,11 @@
+ 
+ eval "TCL_DLL_FILE=tcl${VER}${DLLSUFFIX}"
+ 
++if test ${SHARED_BUILD} = 0 ; then
+ eval "TCL_LIB_FILE=${LIBPREFIX}tcl$VER${LIBSUFFIX}"
++else
++eval "TCL_LIB_FILE=${LIBPREFIX}tcl$VER${DLLSUFFIX}${LIBSUFFIX}"
++fi
+ 
+ eval "TCL_LIB_FLAG=\"-ltcl${VER}${LIBFLAGSUFFIX}\""
+ eval "TCL_BUILD_LIB_SPEC=\"-L`pwd` ${TCL_LIB_FLAG}\""
+diff -Nur tcl8.5.14.old/win/tcl.m4 tcl8.5.14/win/tcl.m4
+--- tcl8.5.14.old/win/tcl.m4	2013-04-02 02:36:36.000000000 +0800
++++ tcl8.5.14/win/tcl.m4	2013-10-03 21:11:29.851148200 +0800
+@@ -695,7 +695,7 @@
+ 	    SHLIB_LD_LIBS='${LIBS}'
+ 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
+ 	    MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -o \[$]@ ${extra_ldflags} \
+-	        -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\[$]@)"
++	        -Wl,--out-implib,\$(patsubst %.dll,lib%.dll.a,\[$]@)"
+ 
+ 	    LIBSUFFIX="\${DBGX}.a"
+ 	    LIBFLAGSUFFIX="\${DBGX}"
