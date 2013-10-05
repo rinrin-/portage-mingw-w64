@@ -20,3 +20,4 @@ dev-libs/popt		nls
 dev-vcs/subversion	nls webdav-serf
 media-libs/freetype     doc fontforge utils
 media-video/rtmpdump	ssl
+dev-libs/libgpg-error	nls
