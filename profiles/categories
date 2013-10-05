@@ -13,5 +13,6 @@ sys-libs
 media-fonts
 media-libs
 media-video
+net-dns
 net-libs
 virtual
