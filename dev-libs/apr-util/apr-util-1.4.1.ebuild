@@ -98,6 +98,8 @@ src_install() {
 	if ! use static-libs; then
 		find "${ED}" -name "*.a" -exec rm -f {} +
 	fi
+	
+    sed -i -e 's:-no-undefined::' ${ED}/usr/bin/apu-1-config || die
 
 	# This file is only used on AIX systems, which Gentoo is not,
 	# and causes collisions between the SLOTs, so remove it.
