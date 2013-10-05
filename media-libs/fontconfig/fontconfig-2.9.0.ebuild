@@ -61,7 +61,7 @@ src_configure() {
 	if [[ ${CHOST} == *-mingw* ]]; then
 	  myconf="${myconf} --with-confdir=${EPREFIX}/etc/fonts"
 	  myconf="${myconf} --with-default-fonts=APPSHAREFONTDIR"
-	  myconf="${myconf} --with-cache-dir=WINDOWSTEMPDIR_FONTCONFIG_CACHE"
+	  myconf="${myconf} --with-cache-dir=/tmp"
 	else
 	  myconf="${myconf} --with-default-fonts=${EPREFIX}/usr/share/fonts"
 	  myconf="${myconf} --with-add-fonts=${EPREFIX}/usr/local/share/fonts"
@@ -105,6 +105,8 @@ src_install() {
 	# As of fontconfig 2.7, everything sticks their noses in here.
 	#dodir /etc/sandbox.d
 	#echo 'SANDBOX_PREDICT="/var/cache/fontconfig"' > "${D}"/etc/sandbox.d/37fontconfig
+	
+	rm -f "${ED}/usr/$(get_libdir)/fontconfig.def"
 }
 
 pkg_preinst() {
