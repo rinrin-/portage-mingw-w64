@@ -12,5 +12,6 @@ sys-devel
 sys-libs
 media-fonts
 media-libs
+media-video
 net-libs
 virtual

@@ -22,3 +22,4 @@ sys-devel/flex-2.5.35
 sys-apps/groff-1.21
 sys-apps/sed-4.2.1
 sys-apps/file-5.11
+dev-vcs/git-1.7.9
