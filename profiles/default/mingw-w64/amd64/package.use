@@ -22,3 +22,4 @@ media-libs/freetype     doc fontforge utils
 media-video/rtmpdump	ssl
 dev-libs/libgpg-error	nls
 dev-libs/libpcre	static-libs unicode zlib
+dev-lang/swig		pcre
